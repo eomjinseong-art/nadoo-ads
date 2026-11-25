@@ -34,6 +34,10 @@
     {"id": "m8r8", "name": "손해평가사 자격증", "url": "https://m8r8b26p0w.sens.kr",
      "title": "손해평가사 자격증 과정 안내", "desc": "시험 일정과 학습 과정을 상담으로 안내받을 수 있어요.", "cta": "과정 안내 보기"},
     {"id": "x1eu", "name": "자격증 70여종 무료수강", "url": "https://x1eujwhmnf.sens.kr",
-     "title": "자격증 온라인 강의 안내", "desc": "여러 민간자격 과정의 수강 조건을 확인해 볼 수 있는 안내 페이지예요.", "cta": "강의 안내 보기"}
+     "title": "자격증 온라인 강의 안내", "desc": "여러 민간자격 과정의 수강 조건을 확인해 볼 수 있는 안내 페이지예요.", "cta": "강의 안내 보기"},
+    {"id": "hub-longrent", "name": "자체 허브: 장기렌트 비교노트", "url": "https://longrent-guide.vercel.app/?utm_source=nadoo-ads&utm_medium=card",
+     "title": "장기렌트·리스·할부, 뭐가 나을까", "desc": "차종별 월 비용과 조건 차이를 한 페이지에 정리한 비교 노트예요.", "cta": "비교 노트 보기"},
+    {"id": "hub-senior", "name": "자체 허브: 시니어 정리·돌봄 노트", "url": "https://senior-care-note.vercel.app/?utm_source=nadoo-ads&utm_medium=card",
+     "title": "부모님 집 정리·돌봄, 미리 알아 두기", "desc": "유품정리·집 정리 절차와 돌봄 관련 자격 정보를 차분하게 정리했어요.", "cta": "정리 노트 보기"}
   ]
 }
