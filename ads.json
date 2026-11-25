@@ -37,8 +37,8 @@
     {"id": "lp-usimsa", "name": "링크프라이스: 유심사", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://newtip.net/click.php?m=usimsa&a=A100710580&l=0000", "title": "유심사 해외 유심", "desc": "해외 여행용 유심을 확인해 보세요.", "cta": "유심사 보기"},
     {"id": "lp-dosirak", "name": "링크프라이스: 도시락이심", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://lase.kr/click.php?m=dosirak1&a=A100710580&l=0000", "title": "도시락이심", "desc": "해외 여행용 eSIM을 확인해 보세요.", "cta": "도시락이심 보기"},
     {"id": "lp-airalo", "name": "링크프라이스: 에어알로", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://bestmore.net/click.php?m=airalo&a=A100710580&l=0000", "title": "에어알로 eSIM", "desc": "국가별 eSIM을 둘러볼 수 있어요.", "cta": "에어알로 보기"},
-    {"id": "lp-yes24", "name": "링크프라이스: 예스24", "type": "linkprice", "sites": ["movie-checklist.vercel.app"], "url": "https://newtip.net/click.php?m=yes24&a=A100710582&l=0000", "title": "예스24에서 관련 책 찾기", "desc": "영화 원작과 관련 책을 예스24에서 찾아보세요.", "cta": "예스24 보기"},
-    {"id": "lp-kyobo", "name": "링크프라이스: 교보문고", "type": "linkprice", "sites": ["movie-checklist.vercel.app"], "url": "https://lpweb.kr/click.php?m=kbbook&a=A100710582&l=0000", "title": "교보문고에서 관련 책 찾기", "desc": "영화 원작과 관련 책을 교보문고에서 찾아보세요.", "cta": "교보문고 보기"},
+    {"id": "lp-yes24", "name": "링크프라이스: 예스24", "type": "linkprice", "sites": ["movie-checklist-sigma.vercel.app"], "url": "https://newtip.net/click.php?m=yes24&a=A100710582&l=0000", "title": "예스24에서 관련 책 찾기", "desc": "영화 원작과 관련 책을 예스24에서 찾아보세요.", "cta": "예스24 보기"},
+    {"id": "lp-kyobo", "name": "링크프라이스: 교보문고", "type": "linkprice", "sites": ["movie-checklist-sigma.vercel.app"], "url": "https://lpweb.kr/click.php?m=kbbook&a=A100710582&l=0000", "title": "교보문고에서 관련 책 찾기", "desc": "영화 원작과 관련 책을 교보문고에서 찾아보세요.", "cta": "교보문고 보기"},
     {"id": "lp-toyotarent", "name": "링크프라이스: 일본 도요타렌터카", "type": "linkprice", "sites": ["granturismo-archive.vercel.app"], "url": "https://lase.kr/click.php?m=toyotarent&a=A100710583&l=0000", "title": "일본 도요타렌터카", "desc": "일본에서 쓰는 렌터카 요금을 확인해 보세요.", "cta": "렌터카 요금 보기"}
   ]
 }
