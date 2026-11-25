@@ -1,7 +1,10 @@
 /* 공용 광고 박스 — 사용법: <div class="nadoo-ad"></div> 를 원하는 자리에 두고
    <script src="https://nadoo-ads.vercel.app/ads.js" defer></script> 한 줄을 넣는다.
    광고 목록은 같은 위치의 ads.json 하나에서 관리한다. url이 빈 항목은 자동으로 숨긴다.
-   선택: <div class="nadoo-ad" data-exclude="coupang,len3"> 로 특정 광고 제외. */
+   선택: <div class="nadoo-ad" data-exclude="coupang,len3"> 로 특정 광고 제외.
+   선택: <div class="nadoo-ad" data-types="apple,coupang"> 로 특정 묶음만 노출(묶음: cpa, apple, coupang / type 이름도 가능).
+   type: cpa(기본, 디비센스) · coupang(쿠팡 파트너스) · naver(네이버 쇼핑 커넥트) · hub(자체 허브).
+   type별 고지 문구가 자동으로 붙는다(note가 있으면 note 우선). 묶음(cpa/apple/coupang)을 고르게 돌린다. */
 (function () {
   if (window.__nadooAds) return; window.__nadooAds = true;
   var me = document.currentScript;
@@ -22,9 +25,26 @@
     if (a.end && d > a.end) return false;
     return true;
   }
-  function pick(exclude) {
-    var c = pool.filter(function (a) { return !used[a.id] && exclude.indexOf(a.id) < 0; });
+  var NOTES = {
+    coupang: '이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.',
+    naver: '네이버 쇼핑 커넥트 활동의 일환으로 수수료를 제공받을 수 있습니다.'
+  };
+  function typeOf(a) { return a.type || 'cpa'; }
+  function groupOf(a) { var t = typeOf(a); return a.group || (t === 'coupang' ? 'coupang' : t === 'naver' ? 'apple' : 'cpa'); }
+  function pick(exclude, types) {
+    var c = pool.filter(function (a) {
+      if (used[a.id] || exclude.indexOf(a.id) >= 0 || exclude.indexOf(typeOf(a)) >= 0 || exclude.indexOf(groupOf(a)) >= 0) return false;
+      if (types.length && types.indexOf(typeOf(a)) < 0 && types.indexOf(groupOf(a)) < 0) return false;
+      return true;
+    });
     if (!c.length) return null;
+    // 묶음(cpa/apple/coupang)을 먼저 고르게 뽑는다: 이 페이지에서 덜 나온 묶음 우선, 같으면 무작위
+    var cnt = {}; pool.forEach(function (a) { if (used[a.id]) cnt[groupOf(a)] = (cnt[groupOf(a)] || 0) + 1; });
+    var groups = []; c.forEach(function (a) { var g = groupOf(a); if (groups.indexOf(g) < 0) groups.push(g); });
+    var min = Infinity; groups.forEach(function (g) { min = Math.min(min, cnt[g] || 0); });
+    groups = groups.filter(function (g) { return (cnt[g] || 0) === min; });
+    var g = groups[Math.floor(Math.random() * groups.length)];
+    c = c.filter(function (a) { return groupOf(a) === g; });
     var total = 0; c.forEach(function (a) { total += (+a.weight > 0 ? +a.weight : 1); });
     var r = Math.random() * total;
     for (var i = 0; i < c.length; i++) { r -= (+c[i].weight > 0 ? +c[i].weight : 1); if (r <= 0) return c[i]; }
@@ -43,11 +63,14 @@
   function render(el, a) {
     var root = el.shadowRoot || (el.attachShadow ? el.attachShadow({ mode: 'open' }) : null);
     if (!root) return;
+    var lab = a.label || (a.internal ? '추천' : '광고');
+    var note = a.note || NOTES[typeOf(a)] || '';
+    var rel = a.internal ? 'noopener' : 'sponsored noopener';
     root.innerHTML = '<style>' + CSS + '</style>' +
-      '<a class="card" href="' + esc(a.url) + '" target="_blank" rel="sponsored noopener" aria-label="광고: ' + esc(a.title) + '">' +
-      '<div class="txt"><div><span class="lab">광고</span><span class="t">' + esc(a.title) + '</span></div>' +
+      '<a class="card" href="' + esc(a.url) + '" target="_blank" rel="' + rel + '" aria-label="' + esc(lab) + ': ' + esc(a.title) + '" data-type="' + esc(typeOf(a)) + '">' +
+      '<div class="txt"><div><span class="lab">' + esc(lab) + '</span><span class="t">' + esc(a.title) + '</span></div>' +
       (a.desc ? '<div class="d">' + esc(a.desc) + '</div>' : '') +
-      (a.note ? '<div class="n">' + esc(a.note) + '</div>' : '') +
+      (note ? '<div class="n">' + esc(note) + '</div>' : '') +
       '</div><span class="b">' + esc(a.cta || '자세히 보기') + '</span></a>';
     root.querySelector('a').addEventListener('click', function () {
       try { fetch(ABACUS + 'click-' + encodeURIComponent(a.id), { mode: 'no-cors', keepalive: true }); } catch (e) {}
@@ -57,7 +80,8 @@
     if (filled ? filled.has(el) : el.__nadooAd) return;
     if (filled) filled.add(el); else el.__nadooAd = 1;
     var ex = (el.getAttribute('data-exclude') || '').split(',').map(function (s) { return s.trim(); });
-    var a = pick(ex);
+    var ty = (el.getAttribute('data-types') || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    var a = pick(ex, ty);
     if (!a) return;              // 남은 광고가 없으면 자리를 비워 둔다
     used[a.id] = 1;
     render(el, a);
