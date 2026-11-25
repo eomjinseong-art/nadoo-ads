@@ -1,5 +1,5 @@
 {
-  "_help": "url만 채우면 바로 노출됩니다. url이 비어 있거나 active가 false면 숨김. days는 노출 요일(KST, 0=일 1=월 ... 6=토). weight는 노출 비중(기본 1). note는 표시되는 고지 문구. type: cpa(기본)/coupang/naver/hub — type별 고지 자동 표시. internal:true면 '추천' 라벨. 사이트에서 data-types=\"apple,coupang\"로 묶음 필터.",
+  "_help": "url만 채우면 바로 노출됩니다. url이 비어 있거나 active가 false면 숨김. days는 노출 요일(KST, 0=일 1=월 ... 6=토). weight는 노출 비중(기본 1). note는 표시되는 고지 문구. type: cpa(기본)/coupang/naver/hub/linkprice — type별 고지 자동 표시. internal:true면 '추천' 라벨. sites:[hostname]이 있으면 그 호스트에서만 노출. 사이트에서 data-types=\"apple,coupang,linkprice\"로 묶음 필터.",
   "version": 2,
   "ads": [
     {"id": "len3", "name": "장기렌트/리스 차드림", "url": "https://len3yxugo2.sens.kr", "title": "신차 장기렌트·리스 견적 비교", "desc": "차종과 기간을 정하면 월 납입금 견적을 상담으로 안내받을 수 있어요.", "cta": "견적 상담 보기", "days": [1, 2, 3, 4, 5]},
@@ -25,6 +25,20 @@
     {"id": "apple-airpods", "name": "애플 비교노트: 에어팟", "type": "naver", "internal": true, "url": "https://apple-compare-note.vercel.app/audio?utm_source=nadoo-ads&utm_medium=adbox&utm_campaign=apple&utm_content=airpods", "title": "에어팟 5·프로 3·이어팟 비교", "desc": "노이즈 캔슬링, 착용감, 가격 차이를 한눈에 비교했어요.", "cta": "에어팟 비교 보기", "note": "추천 페이지에 네이버 쇼핑 커넥트 링크가 있습니다. 네이버 쇼핑 커넥트 활동의 일환으로 수수료를 제공받을 수 있습니다."},
     {"id": "coupang-living", "name": "쿠팡 파트너스: 생활용품", "type": "coupang", "url": "https://link.coupang.com/a/hsdzLh1vB6", "title": "생활용품, 쿠팡에서 가격 비교", "desc": "세제·휴지·주방용품 같은 생필품을 쿠팡에서 한 번에 둘러보세요.", "cta": "쿠팡 열기"},
     {"id": "coupang-rocket", "name": "쿠팡 파트너스: 로켓배송 특가", "type": "coupang", "url": "https://link.coupang.com/a/hsdzLh1vB6", "title": "로켓배송 특가 둘러보기", "desc": "내일 받아 볼 수 있는 로켓배송 상품의 할인가를 확인해 보세요.", "cta": "특가 보기"},
-    {"id": "coupang-deal", "name": "쿠팡 파트너스: 오늘의 딜", "type": "coupang", "url": "https://link.coupang.com/a/hsdzLh1vB6", "title": "오늘의 딜 확인하기", "desc": "하루 동안만 열리는 쿠팡 할인 상품을 모아 볼 수 있어요.", "cta": "오늘의 딜 보기"}
+    {"id": "coupang-deal", "name": "쿠팡 파트너스: 오늘의 딜", "type": "coupang", "url": "https://link.coupang.com/a/hsdzLh1vB6", "title": "오늘의 딜 확인하기", "desc": "하루 동안만 열리는 쿠팡 할인 상품을 모아 볼 수 있어요.", "cta": "오늘의 딜 보기"},
+    {"id": "lp-surfshark", "name": "링크프라이스: 서프샤크 VPN", "type": "linkprice", "sites": ["ai-tools-site-liart-one.vercel.app"], "url": "https://linkmoa.kr/click.php?m=surfshark&a=A100710579&l=0000", "title": "서프샤크 VPN", "desc": "해외 사이트와 공용 와이파이에서 쓰는 VPN이에요.", "cta": "서프샤크 보기"},
+    {"id": "lp-nordvpn", "name": "링크프라이스: 노드VPN", "type": "linkprice", "sites": ["ai-tools-site-liart-one.vercel.app"], "url": "https://linkmoa.kr/click.php?m=nordvpn2&a=A100710579&l=0000", "title": "노드VPN", "desc": "여러 기기에서 함께 쓰는 VPN이에요.", "cta": "노드VPN 보기"},
+    {"id": "lp-expressvpn", "name": "링크프라이스: 익스프레스VPN", "type": "linkprice", "sites": ["ai-tools-site-liart-one.vercel.app"], "url": "https://bestmore.net/click.php?m=exvpn&a=A100710579&l=0000", "title": "익스프레스VPN", "desc": "해외 접속과 보안 연결에 쓰는 VPN이에요.", "cta": "익스프레스VPN 보기"},
+    {"id": "lp-udemy", "name": "링크프라이스: 유데미", "type": "linkprice", "sites": ["ai-tools-site-liart-one.vercel.app"], "url": "https://linkmoa.kr/click.php?m=udemy&a=A100710579&l=0000", "title": "유데미 온라인 강의", "desc": "AI·코딩을 포함한 온라인 강의를 둘러볼 수 있어요.", "cta": "유데미 보기"},
+    {"id": "lp-lenovo", "name": "링크프라이스: 레노버", "type": "linkprice", "sites": ["ai-tools-site-liart-one.vercel.app"], "url": "https://lase.kr/click.php?m=lenovo&a=A100710579&l=0000", "title": "레노버 노트북·PC", "desc": "노트북과 PC 제품을 레노버 스토어에서 확인해 보세요.", "cta": "레노버 스토어 보기"},
+    {"id": "lp-myrealtrip", "name": "링크프라이스: 마이리얼트립", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://newtip.net/click.php?m=myrealtrip&a=A100710580&l=0000", "title": "마이리얼트립", "desc": "해외 여행 예약과 투어를 찾아볼 수 있어요.", "cta": "마이리얼트립 보기"},
+    {"id": "lp-klook", "name": "링크프라이스: 클룩", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://newtip.net/click.php?m=klook&a=A100710580&l=0000", "title": "클룩", "desc": "해외 액티비티와 패스를 둘러볼 수 있어요.", "cta": "클룩 보기"},
+    {"id": "lp-agoda", "name": "링크프라이스: 아고다", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://bestmore.net/click.php?m=agoda&a=A100710580&l=0000", "title": "아고다 숙소", "desc": "해외 숙소 요금을 비교해 보세요.", "cta": "아고다 보기"},
+    {"id": "lp-usimsa", "name": "링크프라이스: 유심사", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://newtip.net/click.php?m=usimsa&a=A100710580&l=0000", "title": "유심사 해외 유심", "desc": "해외 여행용 유심을 확인해 보세요.", "cta": "유심사 보기"},
+    {"id": "lp-dosirak", "name": "링크프라이스: 도시락이심", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://lase.kr/click.php?m=dosirak1&a=A100710580&l=0000", "title": "도시락이심", "desc": "해외 여행용 eSIM을 확인해 보세요.", "cta": "도시락이심 보기"},
+    {"id": "lp-airalo", "name": "링크프라이스: 에어알로", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://bestmore.net/click.php?m=airalo&a=A100710580&l=0000", "title": "에어알로 eSIM", "desc": "국가별 eSIM을 둘러볼 수 있어요.", "cta": "에어알로 보기"},
+    {"id": "lp-yes24", "name": "링크프라이스: 예스24", "type": "linkprice", "sites": ["movie-checklist.vercel.app"], "url": "https://newtip.net/click.php?m=yes24&a=A100710582&l=0000", "title": "예스24에서 관련 책 찾기", "desc": "영화 원작과 관련 책을 예스24에서 찾아보세요.", "cta": "예스24 보기"},
+    {"id": "lp-kyobo", "name": "링크프라이스: 교보문고", "type": "linkprice", "sites": ["movie-checklist.vercel.app"], "url": "https://lpweb.kr/click.php?m=kbbook&a=A100710582&l=0000", "title": "교보문고에서 관련 책 찾기", "desc": "영화 원작과 관련 책을 교보문고에서 찾아보세요.", "cta": "교보문고 보기"},
+    {"id": "lp-toyotarent", "name": "링크프라이스: 일본 도요타렌터카", "type": "linkprice", "sites": ["granturismo-archive.vercel.app"], "url": "https://lase.kr/click.php?m=toyotarent&a=A100710583&l=0000", "title": "일본 도요타렌터카", "desc": "일본에서 쓰는 렌터카 요금을 확인해 보세요.", "cta": "렌터카 요금 보기"}
   ]
 }

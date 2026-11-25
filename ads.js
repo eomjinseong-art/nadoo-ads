@@ -2,9 +2,10 @@
    <script src="https://nadoo-ads.vercel.app/ads.js" defer></script> 한 줄을 넣는다.
    광고 목록은 같은 위치의 ads.json 하나에서 관리한다. url이 빈 항목은 자동으로 숨긴다.
    선택: <div class="nadoo-ad" data-exclude="coupang,len3"> 로 특정 광고 제외.
-   선택: <div class="nadoo-ad" data-types="apple,coupang"> 로 특정 묶음만 노출(묶음: cpa, apple, coupang / type 이름도 가능).
-   type: cpa(기본, 디비센스) · coupang(쿠팡 파트너스) · naver(네이버 쇼핑 커넥트) · hub(자체 허브).
-   type별 고지 문구가 자동으로 붙는다(note가 있으면 note 우선). 묶음(cpa/apple/coupang)을 고르게 돌린다. */
+   선택: <div class="nadoo-ad" data-types="apple,coupang"> 로 특정 묶음만 노출(묶음: cpa, apple, coupang, linkprice / type 이름도 가능).
+   type: cpa(기본, 디비센스) · coupang(쿠팡 파트너스) · naver(네이버 쇼핑 커넥트) · hub(자체 허브) · linkprice(링크프라이스).
+   type별 고지 문구가 자동으로 붙는다(note가 있으면 note 우선). 묶음(cpa/apple/coupang/linkprice)을 고르게 돌린다.
+   sites가 있는 항목은 location.hostname이 그 목록과 일치할 때만 노출된다. */
 (function () {
   if (window.__nadooAds) return; window.__nadooAds = true;
   var me = document.currentScript;
@@ -17,8 +18,24 @@
 
   function kstDay() { return new Date(Date.now() + 9 * 3600e3).getUTCDay(); }
   function kstDate() { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); }
+  function normHost(s) {
+    s = String(s || '').toLowerCase();
+    if (s.indexOf('www.') === 0) s = s.slice(4);
+    return s;
+  }
+  function hostAllowed(a) {
+    if (!Array.isArray(a.sites) || !a.sites.length) return true;
+    var h = '';
+    try { h = normHost(location.hostname); } catch (e) { return false; }
+    for (var i = 0; i < a.sites.length; i++) {
+      var s = normHost(a.sites[i]);
+      if (s && h === s) return true;
+    }
+    return false;
+  }
   function eligible(a) {
     if (!a || !a.url || !/^https:\/\//.test(a.url) || a.active === false) return false;
+    if (!hostAllowed(a)) return false;
     if (Array.isArray(a.days) && a.days.indexOf(kstDay()) < 0) return false;
     var d = kstDate();
     if (a.start && d < a.start) return false;
@@ -27,10 +44,14 @@
   }
   var NOTES = {
     coupang: '이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.',
-    naver: '네이버 쇼핑 커넥트 활동의 일환으로 수수료를 제공받을 수 있습니다.'
+    naver: '네이버 쇼핑 커넥트 활동의 일환으로 수수료를 제공받을 수 있습니다.',
+    linkprice: '이 포스팅은 제휴마케팅이 포함된 광고로 커미션을 지급 받습니다.'
   };
   function typeOf(a) { return a.type || 'cpa'; }
-  function groupOf(a) { var t = typeOf(a); return a.group || (t === 'coupang' ? 'coupang' : t === 'naver' ? 'apple' : 'cpa'); }
+  function groupOf(a) {
+    var t = typeOf(a);
+    return a.group || (t === 'coupang' ? 'coupang' : t === 'naver' ? 'apple' : t === 'linkprice' ? 'linkprice' : 'cpa');
+  }
   function pick(exclude, types) {
     var c = pool.filter(function (a) {
       if (used[a.id] || exclude.indexOf(a.id) >= 0 || exclude.indexOf(typeOf(a)) >= 0 || exclude.indexOf(groupOf(a)) >= 0) return false;
@@ -38,7 +59,7 @@
       return true;
     });
     if (!c.length) return null;
-    // 묶음(cpa/apple/coupang)을 먼저 고르게 뽑는다: 이 페이지에서 덜 나온 묶음 우선, 같으면 무작위
+    // 묶음(cpa/apple/coupang/linkprice)을 먼저 고르게 뽑는다: 이 페이지에서 덜 나온 묶음 우선, 같으면 무작위
     var cnt = {}; pool.forEach(function (a) { if (used[a.id]) cnt[groupOf(a)] = (cnt[groupOf(a)] || 0) + 1; });
     var groups = []; c.forEach(function (a) { var g = groupOf(a); if (groups.indexOf(g) < 0) groups.push(g); });
     var min = Infinity; groups.forEach(function (g) { min = Math.min(min, cnt[g] || 0); });
