@@ -1,5 +1,5 @@
 {
-  "_help": "url만 채우면 바로 노출됩니다. url이 비어 있거나 active가 false면 숨김. days는 노출 요일(KST, 0=일 1=월 ... 6=토). weight는 노출 비중(기본 1). note는 표시되는 고지 문구. type: cpa(기본)/coupang/naver/hub/linkprice — type별 고지 자동 표시. internal:true면 '추천' 라벨. sites:[hostname]이 있으면 그 호스트에서만 노출. 사이트에서 data-types=\"apple,coupang,linkprice\"로 묶음 필터.",
+  "_help": "url만 채우면 바로 노출됩니다. url이 비어 있거나 active가 false면 숨김. days는 노출 요일(KST, 0=일 1=월 ... 6=토). weight는 노출 비중(기본 1). note는 표시되는 고지 문구. type: cpa(기본)/coupang/naver/hub/linkprice/vpnpromo — type별 고지 자동 표시. internal:true면 '추천' 라벨. sites:[hostname]이 있으면 그 호스트에서만 노출. 사이트에서 data-types=\"apple,coupang,linkprice\"로 묶음 필터.",
   "version": 2,
   "ads": [
     {"id": "len3", "name": "장기렌트/리스 차드림", "url": "https://len3yxugo2.sens.kr", "title": "신차 장기렌트·리스 견적 비교", "desc": "차종과 기간을 정하면 월 납입금 견적을 상담으로 안내받을 수 있어요.", "cta": "견적 상담 보기", "days": [1, 2, 3, 4, 5]},
@@ -39,6 +39,7 @@
     {"id": "lp-airalo", "name": "링크프라이스: 에어알로", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://bestmore.net/click.php?m=airalo&a=A100710580&l=0000", "title": "에어알로 eSIM", "desc": "국가별 eSIM을 둘러볼 수 있어요.", "cta": "에어알로 보기"},
     {"id": "lp-yes24", "name": "링크프라이스: 예스24", "type": "linkprice", "sites": ["movie-checklist-sigma.vercel.app"], "url": "https://lpweb.kr/click.php?m=yes24&a=A100710587&l=0000", "title": "예스24에서 관련 책 찾기", "desc": "영화 원작과 관련 책을 예스24에서 찾아보세요.", "cta": "예스24 보기"},
     {"id": "lp-kyobo", "name": "링크프라이스: 교보문고", "type": "linkprice", "sites": ["movie-checklist-sigma.vercel.app"], "url": "https://lpweb.kr/click.php?m=kbbook&a=A100710582&l=0000", "title": "교보문고에서 관련 책 찾기", "desc": "영화 원작과 관련 책을 교보문고에서 찾아보세요.", "cta": "교보문고 보기"},
-    {"id": "lp-toyotarent", "name": "링크프라이스: 일본 도요타렌터카", "type": "linkprice", "sites": ["granturismo-archive.vercel.app"], "url": "https://bestmore.net/click.php?m=toyotarent&a=A100710588&l=0000", "title": "일본 도요타렌터카", "desc": "일본에서 쓰는 렌터카 요금을 확인해 보세요.", "cta": "렌터카 요금 보기"}
+    {"id": "lp-toyotarent", "name": "링크프라이스: 일본 도요타렌터카", "type": "linkprice", "sites": ["granturismo-archive.vercel.app"], "url": "https://bestmore.net/click.php?m=toyotarent&a=A100710588&l=0000", "title": "일본 도요타렌터카", "desc": "일본에서 쓰는 렌터카 요금을 확인해 보세요.", "cta": "렌터카 요금 보기"},
+    {"id": "vpn-compare-promo", "name": "VPN 비교 페이지 안내", "type": "vpnpromo", "sites": ["movie-checklist-sigma.vercel.app", "bond-archive-two.vercel.app", "bond-archive.vercel.app", "mi-archive.vercel.app", "ff-archive.vercel.app", "transformers-archive.vercel.app", "fordvferrari-archive.vercel.app", "rush-archive.vercel.app", "granturismo-archive.vercel.app", "tarzan-archive.vercel.app", "johnwick-archive.vercel.app", "gun-archive.vercel.app", "nadoo-onepiece.vercel.app", "nadoo-musical.vercel.app", "the-chosen-korean.vercel.app"], "url": "https://movie-checklist-sigma.vercel.app/vpn?utm_source=nadoo-ads&utm_medium=vpnpromo&utm_campaign=vpn-compare", "title": "해외 OTT로 영화 볼 때 VPN 비교", "desc": "서프샤크·노드VPN·익스프레스VPN을 공식 안내 기준으로 비교한 페이지입니다.", "cta": "비교 보기", "note": "비교 페이지에는 제휴마케팅 링크가 있습니다."}
   ]
 }
