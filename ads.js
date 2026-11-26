@@ -2,19 +2,24 @@
    <script src="https://nadoo-ads.vercel.app/ads.js" defer></script> 한 줄을 넣는다.
    광고 목록은 같은 위치의 ads.json 하나에서 관리한다. url이 빈 항목은 자동으로 숨긴다.
    선택: <div class="nadoo-ad" data-exclude="coupang,len3"> 로 특정 광고 제외.
-   선택: <div class="nadoo-ad" data-types="apple,coupang"> 로 특정 묶음만 노출(묶음: cpa, apple, coupang, linkprice, vpnpromo / type 이름도 가능).
+   선택: <div class="nadoo-ad" data-types="apple,coupang"> 로 특정 묶음만 노출(묶음: cpa, apple, coupang, linkprice, vpnpromo, lodge / type 이름도 가능).
    type: cpa(기본, 디비센스) · coupang(쿠팡 파트너스) · naver(네이버 쇼핑 커넥트) · hub(자체 허브) · linkprice(링크프라이스) · vpnpromo(영화 사이트용 VPN 비교 페이지 안내).
    type별 고지 문구가 자동으로 붙는다(note가 있으면 note 우선). 묶음(cpa/apple/coupang/linkprice)을 고르게 돌린다.
-   sites가 있는 항목은 location.hostname이 그 목록과 일치할 때만 노출된다. */
+   sites가 있는 항목은 location.hostname이 그 목록과 일치할 때만 노출된다.
+   하단 바로가기: <div class="nadoo-ad-bar"></div>. 코드 맵은 ads.json 의 bar.sites.
+   사이트 코드나 merchants가 없으면 로고는 숨긴다. 나두게임즈(robingames)는 노출하지 않는다. */
 (function () {
   if (window.__nadooAds) return; window.__nadooAds = true;
   var me = document.currentScript;
   var base = me && me.src ? me.src.replace(/[^\/]*$/, '') : 'https://nadoo-ads.vercel.app/';
   var ABACUS = 'https://abacus.jasoncameron.dev/hit/nadoo-ads/';
   var filled = typeof WeakSet === 'function' ? new WeakSet() : null;
-  var used = {};          // 같은 페이지 안에서 이미 보여 준 광고 id
-  var pool = null;        // 오늘 노출 가능한 광고
-  var pending = [];
+  var used = {};
+  var pool = null;
+  var barCfg = null;
+  var barFilled = typeof WeakSet === 'function' ? new WeakSet() : null;
+  var DISMISS_KEY = 'nadoo-ad-bar-dismissed';
+  var SPACER_ID = 'nadoo-bar-spacer';
 
   function kstDay() { return new Date(Date.now() + 9 * 3600e3).getUTCDay(); }
   function kstDate() { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); }
@@ -23,10 +28,13 @@
     if (s.indexOf('www.') === 0) s = s.slice(4);
     return s;
   }
+  function currentHost() {
+    try { return normHost(location.hostname); } catch (e) { return ''; }
+  }
   function hostAllowed(a) {
     if (!Array.isArray(a.sites) || !a.sites.length) return true;
-    var h = '';
-    try { h = normHost(location.hostname); } catch (e) { return false; }
+    var h = currentHost();
+    if (!h) return false;
     for (var i = 0; i < a.sites.length; i++) {
       var s = normHost(a.sites[i]);
       if (s && h === s) return true;
@@ -59,7 +67,6 @@
       return true;
     });
     if (!c.length) return null;
-    // 묶음(cpa/apple/coupang/linkprice)을 먼저 고르게 뽑는다: 이 페이지에서 덜 나온 묶음 우선, 같으면 무작위
     var cnt = {}; pool.forEach(function (a) { if (used[a.id]) cnt[groupOf(a)] = (cnt[groupOf(a)] || 0) + 1; });
     var groups = []; c.forEach(function (a) { var g = groupOf(a); if (groups.indexOf(g) < 0) groups.push(g); });
     var min = Infinity; groups.forEach(function (g) { min = Math.min(min, cnt[g] || 0); });
@@ -103,7 +110,7 @@
     var ex = (el.getAttribute('data-exclude') || '').split(',').map(function (s) { return s.trim(); });
     var ty = (el.getAttribute('data-types') || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
     var a = pick(ex, ty);
-    if (!a) return;              // 남은 광고가 없으면 자리를 비워 둔다
+    if (!a) return;
     used[a.id] = 1;
     render(el, a);
   }
@@ -111,21 +118,237 @@
     var els = document.querySelectorAll('.nadoo-ad');
     for (var i = 0; i < els.length; i++) { if (pool) fill(els[i]); }
   }
+
+  function barExcluded() {
+    var h = currentHost();
+    var ex = (barCfg && barCfg.excludeHosts) || [];
+    for (var i = 0; i < ex.length; i++) if (normHost(ex[i]) === h) return true;
+    return h === 'robingames.vercel.app';
+  }
+  function siteRec() {
+    if (!barCfg || !barCfg.sites) return null;
+    var rec = barCfg.sites[currentHost()];
+    if (!rec || !rec.code) return null;
+    return rec;
+  }
+  function visibleBarItems() {
+    var rec = siteRec();
+    if (!rec || barExcluded()) return [];
+    var allowed = rec.merchants || [];
+    if (!allowed.length) return [];
+    return (barCfg.items || []).filter(function (it) {
+      if (!it || it.active === false || !it.m) return false;
+      return allowed.indexOf(it.m) >= 0 || allowed.indexOf(it.id) >= 0;
+    });
+  }
+  function clickUrl(item, code) {
+    var host = item.clickHost || (barCfg && barCfg.clickHost) || 'https://bestmore.net/click.php';
+    var baseUrl = String(host);
+    if (baseUrl.indexOf('click.php') < 0) {
+      baseUrl = baseUrl.replace(/\/?$/, '/') + 'click.php';
+    }
+    return baseUrl + '?m=' + encodeURIComponent(item.m) + '&a=' + encodeURIComponent(code) + '&l=0000';
+  }
+  function logoSrc(item) {
+    if (!item.logo) return '';
+    if (/^https?:\/\//.test(item.logo)) return item.logo;
+    return base + item.logo.replace(/^\//, '');
+  }
+  function isDismissed() {
+    try {
+      var raw = localStorage.getItem(DISMISS_KEY);
+      if (!raw) return false;
+      var days = (barCfg && +barCfg.dismissDays) || 1;
+      if (raw === '1' || raw === 'true') return true;
+      var t = Date.parse(raw);
+      if (isNaN(t)) return raw === kstDate();
+      return (Date.now() - t) < days * 86400e3;
+    } catch (e) { return false; }
+  }
+  function dismissBar() {
+    try { localStorage.setItem(DISMISS_KEY, new Date().toISOString()); } catch (e) {}
+    var els = document.querySelectorAll('.nadoo-ad-bar');
+    for (var i = 0; i < els.length; i++) {
+      var r = els[i].shadowRoot; if (r) r.innerHTML = '';
+      els[i].style.display = 'none';
+    }
+    clearSpacer();
+  }
+  function otherBottomH() {
+    var n = 0;
+    var nodes = document.querySelectorAll('[data-coupang-sticky]');
+    for (var i = 0; i < nodes.length; i++) {
+      var r = nodes[i].getBoundingClientRect();
+      if (r.height > 0) n = Math.max(n, Math.round(r.height));
+    }
+    return n;
+  }
+  function isMobile() {
+    try { return window.matchMedia && window.matchMedia('(max-width: 767px)').matches; } catch (e) { return false; }
+  }
+  function spacerEl() {
+    var el = document.getElementById(SPACER_ID);
+    if (!el && document.body) {
+      el = document.createElement('div');
+      el.id = SPACER_ID;
+      el.setAttribute('aria-hidden', 'true');
+      el.style.cssText = 'display:none;width:100%;pointer-events:none;flex:none;';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function clearSpacer() {
+    var el = document.getElementById(SPACER_ID);
+    if (el) { el.style.display = 'none'; el.style.height = '0px'; }
+  }
+  function syncSpacer() {
+    if (!isMobile() || isDismissed()) { clearSpacer(); return; }
+    var sticky = null;
+    var els = document.querySelectorAll('.nadoo-ad-bar');
+    for (var i = 0; i < els.length; i++) {
+      var r = els[i].shadowRoot;
+      var s = r && r.querySelector('.sticky');
+      if (s) { sticky = s; break; }
+    }
+    if (!sticky) { clearSpacer(); return; }
+    var h = Math.round(sticky.getBoundingClientRect().height);
+    if (h <= 0) { clearSpacer(); return; }
+    var sp = spacerEl();
+    if (!sp) return;
+    sp.style.display = 'block';
+    sp.style.height = h + 'px';
+  }
+  var BAR_CSS =
+    ':host{display:block;font-family:inherit;color:inherit;text-align:left;clear:both}' +
+    '.footer{display:none;margin:16px 0 8px;padding:12px 14px 10px;border-top:1px solid rgba(128,128,128,.3);background:rgba(128,128,128,.06);border-radius:12px}' +
+    '.sticky{display:none}' +
+    '@media (min-width:768px){.footer{display:block}.sticky{display:none !important}}' +
+    '@media (max-width:767px){.footer{display:none}.sticky{display:block;position:fixed;left:0;right:0;z-index:9998;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:rgba(20,20,20,.92);color:#f4f4f4;box-shadow:0 -4px 16px rgba(0,0,0,.2);backdrop-filter:blur(8px)}}' +
+    '.row{display:flex;align-items:center;gap:8px}' +
+    '.meta{flex:0 0 auto;display:flex;flex-direction:column;gap:2px;min-width:0}' +
+    '.lab{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border:1px solid currentColor;border-radius:999px;opacity:.8}' +
+    '.ttl{font-size:11px;font-weight:700;opacity:.9;white-space:nowrap}' +
+    '.logos{display:flex;flex:1 1 auto;gap:8px;overflow-x:auto;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:none}' +
+    '.logos::-webkit-scrollbar{display:none}' +
+    'a.logo{flex:0 0 auto;display:flex;align-items:center;justify-content:center;text-decoration:none;color:inherit;border-radius:8px}' +
+    'a.logo img{display:block;height:32px;width:auto;max-width:110px;border-radius:8px}' +
+    'a.logo .txt{display:inline-block;font-size:12px;font-weight:700;padding:7px 10px;border:1px solid rgba(128,128,128,.45);border-radius:8px;background:rgba(128,128,128,.1)}' +
+    '.note{font-size:10.5px;opacity:.65;margin-top:6px;line-height:1.4}' +
+    '.x{flex:0 0 auto;border:0;background:transparent;color:inherit;font-size:18px;line-height:1;padding:4px 6px;margin-left:2px;opacity:.8;cursor:pointer}' +
+    '.x:hover{opacity:1}' +
+    '@media (min-width:768px){.x{display:none}.ttl{white-space:normal}}';
+
+  function logoHtml(item, code) {
+    var href = clickUrl(item, code);
+    var src = logoSrc(item);
+    var inner = src
+      ? '<img src="' + esc(src) + '" alt="' + esc(item.name || item.m) + '" width="120" height="36" />'
+      : '<span class="txt">' + esc(item.name || item.m) + '</span>';
+    return '<a class="logo" href="' + esc(href) + '" target="_blank" rel="sponsored noopener" data-id="' + esc(item.id || item.m) + '" aria-label="광고: ' + esc(item.name || item.m) + '">' + inner + '</a>';
+  }
+  function bindBarClicks(root) {
+    var links = root.querySelectorAll('a.logo');
+    for (var i = 0; i < links.length; i++) {
+      links[i].addEventListener('click', function (ev) {
+        var id = ev.currentTarget.getAttribute('data-id') || 'bar';
+        try { fetch(ABACUS + 'click-' + encodeURIComponent(id), { mode: 'no-cors', keepalive: true }); } catch (e) {}
+      });
+    }
+    var closeBtn = root.querySelector('.x');
+    if (closeBtn) closeBtn.addEventListener('click', function () { dismissBar(); });
+  }
+  function applyStickyOffset(root) {
+    var sticky = root.querySelector('.sticky');
+    if (!sticky) return;
+    sticky.style.bottom = otherBottomH() + 'px';
+  }
+  function renderBar(el, items, rec) {
+    var root = el.shadowRoot || (el.attachShadow ? el.attachShadow({ mode: 'open' }) : null);
+    if (!root) return;
+    el.style.display = '';
+    var lab = (barCfg && barCfg.label) || '광고';
+    var title = (barCfg && barCfg.title) || '자주 쓰는 곳 바로가기';
+    var note = (barCfg && barCfg.note) || NOTES.linkprice;
+    var logos = items.map(function (it) { return logoHtml(it, rec.code); }).join('');
+    var close = '<button type="button" class="x" aria-label="바로가기 닫기">×</button>';
+    root.innerHTML = '<style>' + BAR_CSS + '</style>' +
+      '<div class="footer">' +
+        '<div class="row"><div class="meta"><span class="lab">' + esc(lab) + '</span><span class="ttl">' + esc(title) + '</span></div><div class="logos">' + logos + '</div></div>' +
+        '<p class="note">' + esc(note) + '</p>' +
+      '</div>' +
+      '<div class="sticky">' +
+        '<div class="row"><div class="meta"><span class="lab">' + esc(lab) + '</span><span class="ttl">' + esc(title) + '</span></div><div class="logos">' + logos + '</div>' + close + '</div>' +
+      '</div>';
+    bindBarClicks(root);
+    applyStickyOffset(root);
+    var imgs = root.querySelectorAll('a.logo img');
+    for (var i = 0; i < imgs.length; i++) {
+      imgs[i].addEventListener('error', function () {
+        var a = this.parentNode;
+        var name = this.getAttribute('alt') || '';
+        if (a) a.innerHTML = '<span class="txt">' + esc(name) + '</span>';
+        syncSpacer();
+      });
+      imgs[i].addEventListener('load', function () { syncSpacer(); });
+    }
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(syncSpacer);
+    else setTimeout(syncSpacer, 0);
+  }
+  function fillBar(el) {
+    if (barFilled ? barFilled.has(el) : el.__nadooBar) return;
+    var items = visibleBarItems();
+    var rec = siteRec();
+    if (!items.length || !rec || isDismissed()) {
+      el.style.display = 'none';
+      return;
+    }
+    if (barFilled) barFilled.add(el); else el.__nadooBar = 1;
+    renderBar(el, items, rec);
+  }
+  function ensureMount() {
+    if (barExcluded() || !visibleBarItems().length || isDismissed()) return;
+    if (document.querySelector('.nadoo-ad-bar')) return;
+    if (!document.body) return;
+    var el = document.createElement('div');
+    el.className = 'nadoo-ad-bar';
+    el.setAttribute('data-nadoo-auto', '1');
+    document.body.appendChild(el);
+  }
+  function scanBar() {
+    if (!barCfg) return;
+    ensureMount();
+    var els = document.querySelectorAll('.nadoo-ad-bar');
+    for (var i = 0; i < els.length; i++) fillBar(els[i]);
+    syncSpacer();
+  }
+
   function start() {
     scan();
+    scanBar();
     if (window.MutationObserver) {
       var t = null;
       new MutationObserver(function () { clearTimeout(t); t = setTimeout(function () {
-        // SPA 페이지 이동 시 새 자리가 생기면 다시 채운다(사라진 자리의 광고는 다시 쓸 수 있게 초기화)
         var live = {}; var els = document.querySelectorAll('.nadoo-ad');
         for (var i = 0; i < els.length; i++) { var s = els[i].shadowRoot; var h = s && s.querySelector('a'); if (h) live[h.getAttribute('href')] = 1; }
         pool && pool.forEach(function (a) { if (used[a.id] && !live[a.url]) delete used[a.id]; });
         scan();
+        scanBar();
       }, 150); }).observe(document.documentElement, { childList: true, subtree: true });
+    }
+    if (window.addEventListener) {
+      window.addEventListener('resize', function () {
+        var els = document.querySelectorAll('.nadoo-ad-bar');
+        for (var i = 0; i < els.length; i++) {
+          var r = els[i].shadowRoot; if (r) applyStickyOffset(r);
+        }
+        syncSpacer();
+      });
+      window.addEventListener('orientationchange', syncSpacer);
     }
   }
   fetch(base + 'ads.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (j) {
     pool = (j.ads || []).filter(eligible);
+    barCfg = j.bar || null;
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
   }).catch(function () {});
 })();

@@ -1,5 +1,5 @@
 {
-  "_help": "url만 채우면 바로 노출됩니다. url이 비어 있거나 active가 false면 숨김. days는 노출 요일(KST, 0=일 1=월 ... 6=토). weight는 노출 비중(기본 1). note는 표시되는 고지 문구. type: cpa(기본)/coupang/naver/hub/linkprice/vpnpromo — type별 고지 자동 표시. internal:true면 '추천' 라벨. sites:[hostname]이 있으면 그 호스트에서만 노출. 사이트에서 data-types=\"apple,coupang,linkprice\"로 묶음 필터.",
+  "_help": "url만 채우면 바로 노출됩니다. url이 비어 있거나 active가 false면 숨김. days는 노출 요일(KST, 0=일 1=월 ... 6=토). weight는 노출 비중(기본 1). note는 표시되는 고지 문구. type: cpa(기본)/coupang/naver/hub/linkprice/vpnpromo — type별 고지 자동 표시. internal:true면 '추천' 라벨. sites:[hostname]이 있으면 그 호스트에서만 노출. group으로 묶음 지정(예: lodge). 사이트에서 data-types=\"apple,coupang,linkprice,lodge\"로 묶음 필터. 하단 바로가기는 bar.sites 코드 맵만 고치면 된다. 사이트 코드와 merchants가 있는 호스트에서만 로고가 보인다.",
   "version": 2,
   "ads": [
     {"id": "len3", "name": "장기렌트/리스 차드림", "url": "https://len3yxugo2.sens.kr", "title": "신차 장기렌트·리스 견적 비교", "desc": "차종과 기간을 정하면 월 납입금 견적을 상담으로 안내받을 수 있어요.", "cta": "견적 상담 보기", "days": [1, 2, 3, 4, 5]},
@@ -33,7 +33,8 @@
     {"id": "lp-lenovo", "name": "링크프라이스: 레노버", "type": "linkprice", "sites": ["ai-tools-site-liart-one.vercel.app"], "url": "https://bestmore.net/click.php?m=lenovo&a=A100710586&l=0000", "title": "레노버 노트북·PC", "desc": "노트북과 PC 제품을 레노버 스토어에서 확인해 보세요.", "cta": "레노버 스토어 보기"},
     {"id": "lp-myrealtrip", "name": "링크프라이스: 마이리얼트립", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://newtip.net/click.php?m=myrealtrip&a=A100710580&l=0000", "title": "마이리얼트립", "desc": "해외 여행 예약과 투어를 찾아볼 수 있어요.", "cta": "마이리얼트립 보기"},
     {"id": "lp-klook", "name": "링크프라이스: 클룩", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://newtip.net/click.php?m=klook&a=A100710580&l=0000", "title": "클룩", "desc": "해외 액티비티와 패스를 둘러볼 수 있어요.", "cta": "클룩 보기"},
-    {"id": "lp-agoda", "name": "링크프라이스: 아고다", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://bestmore.net/click.php?m=agoda&a=A100710580&l=0000", "title": "아고다 숙소", "desc": "해외 숙소 요금을 비교해 보세요.", "cta": "아고다 보기"},
+    {"id": "lp-agoda", "name": "링크프라이스: 아고다", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://bestmore.net/click.php?m=agoda&a=A100710580&l=0000", "title": "파도 좋은 날 근처 숙소", "desc": "서핑하기 좋은 날, 스팟 근처 숙소 요금을 아고다에서 비교해 보세요.", "cta": "근처 숙소 보기", "group": "lodge"},
+    {"id": "lp-yanolja", "name": "링크프라이스: 놀(야놀자)", "type": "linkprice", "group": "lodge", "sites": ["surfwikikorea.vercel.app"], "url": "https://bestmore.net/click.php?m=yanolja&a=A100710580&l=0000", "title": "파도 좋은 날 근처 숙소", "desc": "서핑하기 좋은 날, 스팟 근처 숙소를 놀에서 찾아보세요.", "cta": "근처 숙소 보기"},
     {"id": "lp-usimsa", "name": "링크프라이스: 유심사", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://newtip.net/click.php?m=usimsa&a=A100710580&l=0000", "title": "유심사 해외 유심", "desc": "해외 여행용 유심을 확인해 보세요.", "cta": "유심사 보기"},
     {"id": "lp-dosirak", "name": "링크프라이스: 도시락이심", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://lase.kr/click.php?m=dosirak1&a=A100710580&l=0000", "title": "도시락이심", "desc": "해외 여행용 eSIM을 확인해 보세요.", "cta": "도시락이심 보기"},
     {"id": "lp-airalo", "name": "링크프라이스: 에어알로", "type": "linkprice", "sites": ["surfwikikorea.vercel.app"], "url": "https://bestmore.net/click.php?m=airalo&a=A100710580&l=0000", "title": "에어알로 eSIM", "desc": "국가별 eSIM을 둘러볼 수 있어요.", "cta": "에어알로 보기"},
@@ -41,5 +42,37 @@
     {"id": "lp-kyobo", "name": "링크프라이스: 교보문고", "type": "linkprice", "sites": ["movie-checklist-sigma.vercel.app"], "url": "https://lpweb.kr/click.php?m=kbbook&a=A100710582&l=0000", "title": "교보문고에서 관련 책 찾기", "desc": "영화 원작과 관련 책을 교보문고에서 찾아보세요.", "cta": "교보문고 보기"},
     {"id": "lp-toyotarent", "name": "링크프라이스: 일본 도요타렌터카", "type": "linkprice", "sites": ["granturismo-archive.vercel.app"], "url": "https://bestmore.net/click.php?m=toyotarent&a=A100710588&l=0000", "title": "일본 도요타렌터카", "desc": "일본에서 쓰는 렌터카 요금을 확인해 보세요.", "cta": "렌터카 요금 보기"},
     {"id": "vpn-compare-promo", "name": "VPN 비교 페이지 안내", "type": "vpnpromo", "sites": ["movie-checklist-sigma.vercel.app", "bond-archive-two.vercel.app", "bond-archive.vercel.app", "mi-archive.vercel.app", "ff-archive.vercel.app", "transformers-archive.vercel.app", "fordvferrari-archive.vercel.app", "rush-archive.vercel.app", "granturismo-archive.vercel.app", "tarzan-archive.vercel.app", "johnwick-archive.vercel.app", "gun-archive.vercel.app", "nadoo-onepiece.vercel.app", "nadoo-musical.vercel.app", "the-chosen-korean.vercel.app"], "url": "https://movie-checklist-sigma.vercel.app/vpn?utm_source=nadoo-ads&utm_medium=vpnpromo&utm_campaign=vpn-compare", "title": "해외 OTT로 영화 볼 때 VPN 비교", "desc": "서프샤크·노드VPN·익스프레스VPN을 공식 안내 기준으로 비교한 페이지입니다.", "cta": "비교 보기", "note": "비교 페이지에는 제휴마케팅 링크가 있습니다."}
-  ]
+  ],
+  "bar": {
+    "title": "자주 쓰는 곳 바로가기",
+    "label": "광고",
+    "note": "이 포스팅은 제휴마케팅이 포함된 광고로 커미션을 지급 받습니다.",
+    "clickHost": "https://bestmore.net/click.php",
+    "dismissDays": 1,
+    "excludeHosts": ["robingames.vercel.app"],
+    "items": [
+      {"id": "bar-yanolja", "m": "yanolja", "name": "놀", "logo": "logos/yanolja.svg"},
+      {"id": "bar-agoda", "m": "agoda", "name": "아고다", "logo": "logos/agoda.svg", "clickHost": "https://bestmore.net/click.php"},
+      {"id": "bar-klook", "m": "klook", "name": "클룩", "logo": "logos/klook.svg", "clickHost": "https://newtip.net/click.php"},
+      {"id": "bar-hotelskr", "m": "hotelskr", "name": "호텔스닷컴", "logo": "logos/hotelskr.svg"},
+      {"id": "bar-ctrip", "m": "ctrip", "name": "트립닷컴", "logo": "logos/ctrip.svg"},
+      {"id": "bar-gmarket", "m": "gmarket", "name": "지마켓", "logo": "logos/gmarket.svg"},
+      {"id": "bar-gmarket2", "m": "gmarket2", "name": "지마켓", "logo": "logos/gmarket.svg"},
+      {"id": "bar-aliexpress", "m": "aliexpress", "name": "알리익스프레스", "logo": "logos/aliexpress.svg"},
+      {"id": "bar-crocskr", "m": "crocskr", "name": "크록스", "logo": "logos/crocskr.svg"},
+      {"id": "bar-lenovo", "m": "lenovo", "name": "레노버", "logo": "logos/lenovo.svg", "clickHost": "https://bestmore.net/click.php"}
+    ],
+    "sites": {
+      "surfwikikorea.vercel.app": {"code": "A100710580", "merchants": ["yanolja", "agoda", "klook"]},
+      "nadoo-timeline.vercel.app": {"code": "", "merchants": []},
+      "bond-archive-two.vercel.app": {"code": "", "merchants": []},
+      "the-chosen-korean.vercel.app": {"code": "", "merchants": []},
+      "nadoo-myth.vercel.app": {"code": "", "merchants": []},
+      "nadoo-carousel.vercel.app": {"code": "", "merchants": []},
+      "british-motors.vercel.app": {"code": "", "merchants": []},
+      "nadoo-world.vercel.app": {"code": "", "merchants": []},
+      "tinalinkeom.vercel.app": {"code": "A100710514", "merchants": []},
+      "ai-tools-site-liart-one.vercel.app": {"code": "A100710586", "merchants": []}
+    }
+  }
 }
