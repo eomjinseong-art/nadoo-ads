@@ -2,8 +2,8 @@
    <script src="https://nadoo-ads.vercel.app/ads.js" defer></script> 한 줄을 넣는다.
    광고 목록은 같은 위치의 ads.json 하나에서 관리한다. url이 빈 항목은 자동으로 숨긴다.
    선택: <div class="nadoo-ad" data-exclude="coupang,len3"> 로 특정 광고 제외.
-   선택: <div class="nadoo-ad" data-types="apple,coupang"> 로 특정 묶음만 노출(묶음: cpa, apple, coupang, linkprice / type 이름도 가능).
-   type: cpa(기본, 디비센스) · coupang(쿠팡 파트너스) · naver(네이버 쇼핑 커넥트) · hub(자체 허브) · linkprice(링크프라이스).
+   선택: <div class="nadoo-ad" data-types="apple,coupang"> 로 특정 묶음만 노출(묶음: cpa, apple, coupang, linkprice, vpnpromo / type 이름도 가능).
+   type: cpa(기본, 디비센스) · coupang(쿠팡 파트너스) · naver(네이버 쇼핑 커넥트) · hub(자체 허브) · linkprice(링크프라이스) · vpnpromo(영화 사이트용 VPN 비교 페이지 안내).
    type별 고지 문구가 자동으로 붙는다(note가 있으면 note 우선). 묶음(cpa/apple/coupang/linkprice)을 고르게 돌린다.
    sites가 있는 항목은 location.hostname이 그 목록과 일치할 때만 노출된다. */
 (function () {
@@ -50,7 +50,7 @@
   function typeOf(a) { return a.type || 'cpa'; }
   function groupOf(a) {
     var t = typeOf(a);
-    return a.group || (t === 'coupang' ? 'coupang' : t === 'naver' ? 'apple' : t === 'linkprice' ? 'linkprice' : 'cpa');
+    return a.group || (t === 'coupang' ? 'coupang' : t === 'naver' ? 'apple' : t === 'linkprice' ? 'linkprice' : t === 'vpnpromo' ? 'vpnpromo' : 'cpa');
   }
   function pick(exclude, types) {
     var c = pool.filter(function (a) {
