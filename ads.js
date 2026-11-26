@@ -443,6 +443,7 @@
   var autoPath = null;
   var autoTimer = null;
   var autoPlaced = 0;
+  var autoSig = '';
   var autoRuns = 0;
   function autoCfg() {
     if (!autoAll || !autoAll.hosts) return null;
@@ -541,13 +542,20 @@
     var olds = document.querySelectorAll('[data-nadoo-auto-slot]');
     for (var i = 0; i < olds.length; i++) if (olds[i].parentNode) olds[i].parentNode.removeChild(olds[i]);
   }
-  function collapseStatic() {
+  function isCtxSlot(el, ctxList) { return !!(ctxList && ctxList.length && ctxList.indexOf(slotGroup(el)) >= 0); }
+  function collapseStatic(ctxList) {
     var sl = staticSlots().sort(function (a, b) { return absTop(a) - absTop(b); });
     for (var i = 1; i < sl.length; i++) {
       var prev = sl[i - 1];
       if (prev.style.display === 'none') continue;
-      if (absTop(sl[i]) - absBottom(prev) < 90) releaseSlot(sl[i]);
+      if (absTop(sl[i]) - absBottom(prev) < 90) {
+        // 붙은 두 칸 중 문맥 광고는 남긴다.
+        if (isCtxSlot(sl[i], ctxList) && !isCtxSlot(prev, ctxList)) releaseSlot(prev); else releaseSlot(sl[i]);
+      }
     }
+  }
+  function listSig(lists) {
+    return lists.map(function (l) { var n = 0; kidsOf(l).forEach(function (k) { if (!k.hasAttribute('data-nadoo-auto-slot')) n++; }); return n; }).join(',');
   }
   // 본문 안 광고 덩어리(광고 박스, 사이트에 박힌 쿠팡·제휴 카드)의 위치. 머리·바닥글·고정 띠는 뺀다.
   function adBoxes(root, skip) {
@@ -617,12 +625,12 @@
     var ctxList = ctx ? ctx.split(',') : [];
     var every = +cfg.every || +autoAll.every || 10;
     clearAuto();
-    collapseStatic();
+    collapseStatic(ctxList);
     // 사이트에 박힌 쿠팡·제휴 카드와 붙은 광고 칸은 숨긴다(광고끼리 붙이지 않기).
     staticSlots().forEach(function (sl) {
       var t = absTop(sl), bt = absBottom(sl);
       var touch = adBoxes(root, sl).some(function (o) { return o.site && ((o.bottom <= t + 1 && t - o.bottom < 90) || (o.top >= bt - 1 && o.top - bt < 90)); });
-      if (touch) releaseSlot(sl);
+      if (touch && !isCtxSlot(sl, ctxList)) releaseSlot(sl); // 문맥 광고는 지우지 않는다
     });
     var H = Math.max(document.documentElement.scrollHeight, root.scrollHeight);
     var lists = cfg.feed === false ? [] : findLists(root);
@@ -634,24 +642,23 @@
     // 긴 목록: 끝까지 내려가는 사람이 드무니 목록 아래쪽 정적 칸은 위로 옮긴다(숨김).
     if (longList) {
       var cut = Math.max(lastBottom - 10, H * 0.7);
-      staticSlots().forEach(function (s) { if (absTop(s) > cut) releaseSlot(s); });
+      staticSlots().forEach(function (s) { if (absTop(s) > cut && !isCtxSlot(s, ctxList)) releaseSlot(s); });
     }
     // mid: 첫 화면 끝(또는 본문 1/3)
     var T = Math.max(260, Math.min(VH * 0.85, H * 0.34));
     var haveTop = staticSlots().some(function (s) { return absTop(s) < VH * 1.5 && (!ctxList.length || ctxList.indexOf(slotGroup(s)) >= 0); });
     var mid = null;
     if (!haveTop) {
-      if (ctxList.length) {
-        var free = pool.some(function (a) { return !used[a.id] && (ctxList.indexOf(groupOf(a)) >= 0 || ctxList.indexOf(typeOf(a)) >= 0); });
-        if (!free) {
-          var low = staticSlots().filter(function (s) { return ctxList.indexOf(slotGroup(s)) >= 0; });
-          if (low.length) releaseSlot(low[low.length - 1]);
-        }
-      }
+      var free = !ctxList.length || pool.some(function (a) { return !used[a.id] && (ctxList.indexOf(groupOf(a)) >= 0 || ctxList.indexOf(typeOf(a)) >= 0); });
+      var lowCtx = staticSlots().filter(function (s) { return isCtxSlot(s, ctxList); });
       var anchor = cfg.anchor ? document.querySelector(cfg.anchor) : null;
       mid = placeNear(root, T, T + VH * 2.5, ctx, VH, anchor && shown(anchor) ? anchor : null);
-      if (mid) placed++;
-      else if (ctxList.length) {
+      if (mid) {
+        placed++;
+        // 새 자리를 찾은 뒤에만 아래쪽 문맥 칸을 비워 위로 옮긴다(못 찾으면 기존 칸 유지).
+        if (!free && lowCtx.length) releaseSlot(lowCtx[lowCtx.length - 1]);
+      }
+      else if (ctxList.length && (free || !lowCtx.length)) {
         // 붙지 않는 새 자리가 없으면 위쪽(3화면 안) 기존 칸을 문맥 광고로 바꾼다.
         var up = staticSlots().filter(function (s) { return absTop(s) < VH * 3; })[0];
         if (up) {
@@ -688,7 +695,7 @@
       var boxes = adBoxes(root);
       if (boxes.length <= cap) break;
       var victim = null;
-      for (var b = boxes.length - 1; b >= 0; b--) { var e = boxes[b].el; if (!boxes[b].site && !boxes[b].auto && e.classList && e.classList.contains('nadoo-ad')) { victim = e; break; } }
+      for (var b = boxes.length - 1; b >= 0; b--) { var e = boxes[b].el; if (!boxes[b].site && !boxes[b].auto && e.classList && e.classList.contains('nadoo-ad') && (!isCtxSlot(e, ctxList) || mid)) { victim = e; break; } }
       if (victim) { releaseSlot(victim); continue; }
       for (var c = boxes.length - 1; c >= 0; c--) { if (boxes[c].auto && boxes[c].el !== mid) { victim = boxes[c].el; break; } }
       if (victim && victim.parentNode) { victim.parentNode.removeChild(victim); placed--; continue; }
@@ -704,6 +711,7 @@
       }
     }
     autoPlaced = placed;
+    autoSig = listSig(findLists(root));
     if (placed) scan();
   }
   function scheduleAuto(delay) {
@@ -743,8 +751,11 @@
         syncStickies();
         var cur = location.pathname + location.search;
         if (autoPath !== null && cur !== autoPath) { autoPath = cur; autoRuns = 0; clearAuto(); scheduleAuto(900); }
-        // 목록을 다시 그리는 화면(필터·정렬)에서 자동 칸이 지워졌으면 다시 넣는다(같은 주소에서 최대 6번).
-        else if (autoPath !== null && autoPlaced && autoRuns < 6 && !document.querySelector('[data-nadoo-auto-slot]')) { autoRuns++; scheduleAuto(600); }
+        // 목록을 다시 그리는 화면(검색·필터·정렬)은 목록 항목 수가 바뀌면 다시 배치한다(같은 주소에서 최대 30번).
+        else if (autoPath !== null && autoRuns < 30 && autoCfg()) {
+          var sig = listSig(findLists(contentRoot()));
+          if (sig !== autoSig) { autoSig = sig; autoRuns++; scheduleAuto(600); }
+        }
       }, 150); }).observe(document.documentElement, { childList: true, subtree: true });
     }
     if (window.addEventListener) {
