@@ -19,4 +19,5 @@
 - `code`가 비어 있거나 `merchants`가 비어 있거나 해당 머천트가 맵에 없으면 그 사이트에서는 바가 숨겨진다. 승인 대기 머천트(hotelskr, ctrip 등)는 merchants에 넣지 않으면 로고가 나오지 않는다.
 - 새 사이트 코드를 받으면 `bar.sites`에 hostname과 code를 넣고, 승인된 머천트만 merchants 배열에 추가하면 된다.
 - 모바일에서는 하단 고정 + 닫기(하루), 본문이 가리지 않도록 스페이서를 넣는다. PC는 페이지 하단 정적 줄.
+- 바 제목은 `bar.headlines`와 사이트 `mood`(`travel` / `shop`)로 고른다. 머천트 한 줄 문구는 `items[].lines`에서 페이지마다 하나를 무작위로 쓴다. 할인율·금액·최저가·보장 문구는 넣지 않는다.
 - 나두게임즈(`robingames.vercel.app`)는 `bar.excludeHosts`로 제외한다.

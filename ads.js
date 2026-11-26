@@ -79,9 +79,14 @@
     return c[c.length - 1];
   }
   function esc(s) { return String(s || '').replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); }
+  function pickLine(arr, fallback) {
+    if (Array.isArray(arr) && arr.length) return arr[Math.floor(Math.random() * arr.length)];
+    return fallback || '';
+  }
   var CSS = ':host{display:block;margin:20px 0;font-family:inherit;color:inherit;text-align:left;clear:both}' +
-    'a.card{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:14px 16px;border:1px solid rgba(128,128,128,.35);border-radius:12px;background:rgba(128,128,128,.07);color:inherit;text-decoration:none;line-height:1.5;transition:background .15s,border-color .15s}' +
-    'a.card:hover{background:rgba(128,128,128,.13);border-color:rgba(128,128,128,.55)}' +
+    'a.card{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:14px 16px;border:1px solid rgba(128,128,128,.35);border-radius:12px;background:rgba(128,128,128,.07);color:inherit;text-decoration:none;line-height:1.5;transition:background .15s,border-color .15s,transform .15s}' +
+    'a.card:hover{background:rgba(128,128,128,.13);border-color:rgba(128,128,128,.55);transform:translateY(-1px)}' +
+    'a.card.lodge{box-shadow:inset 3px 0 0 #3b82f6}' +
     '.txt{flex:1 1 220px;min-width:0}' +
     '.lab{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border:1px solid rgba(128,128,128,.55);border-radius:999px;opacity:.8;margin-right:6px;vertical-align:1px}' +
     '.t{font-weight:700;font-size:15px}' +
@@ -94,12 +99,16 @@
     var lab = a.label || (a.internal ? '추천' : '광고');
     var note = a.note || NOTES[typeOf(a)] || '';
     var rel = a.internal ? 'noopener' : 'sponsored noopener';
+    var title = pickLine(a.titles, a.title);
+    var desc = pickLine(a.lines, a.desc);
+    var cta = a.cta || '자세히 보기';
+    var klass = 'card' + (groupOf(a) === 'lodge' ? ' lodge' : '');
     root.innerHTML = '<style>' + CSS + '</style>' +
-      '<a class="card" href="' + esc(a.url) + '" target="_blank" rel="' + rel + '" aria-label="' + esc(lab) + ': ' + esc(a.title) + '" data-type="' + esc(typeOf(a)) + '">' +
-      '<div class="txt"><div><span class="lab">' + esc(lab) + '</span><span class="t">' + esc(a.title) + '</span></div>' +
-      (a.desc ? '<div class="d">' + esc(a.desc) + '</div>' : '') +
+      '<a class="' + klass + '" href="' + esc(a.url) + '" target="_blank" rel="' + rel + '" aria-label="' + esc(lab) + ': ' + esc(title) + '" data-type="' + esc(typeOf(a)) + '">' +
+      '<div class="txt"><div><span class="lab">' + esc(lab) + '</span><span class="t">' + esc(title) + '</span></div>' +
+      (desc ? '<div class="d">' + esc(desc) + '</div>' : '') +
       (note ? '<div class="n">' + esc(note) + '</div>' : '') +
-      '</div><span class="b">' + esc(a.cta || '자세히 보기') + '</span></a>';
+      '</div><span class="b">' + esc(cta) + '</span></a>';
     root.querySelector('a').addEventListener('click', function () {
       try { fetch(ABACUS + 'click-' + encodeURIComponent(a.id), { mode: 'no-cors', keepalive: true }); } catch (e) {}
     });
@@ -235,31 +244,49 @@
   }
   var BAR_CSS =
     ':host{display:block;font-family:inherit;color:inherit;text-align:left;clear:both}' +
-    '.footer{display:none;margin:16px 0 8px;padding:12px 14px 10px;border-top:1px solid rgba(128,128,128,.3);background:rgba(128,128,128,.06);border-radius:12px}' +
+    '.footer{display:none;margin:16px 0 8px;padding:14px 16px 12px;border:1px solid rgba(128,128,128,.25);background:rgba(128,128,128,.06);border-radius:16px}' +
     '.sticky{display:none}' +
     '@media (min-width:768px){.footer{display:block}.sticky{display:none !important}}' +
-    '@media (max-width:767px){.footer{display:none}.sticky{display:block;position:fixed;left:0;right:0;z-index:9998;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:rgba(20,20,20,.92);color:#f4f4f4;box-shadow:0 -4px 16px rgba(0,0,0,.2);backdrop-filter:blur(8px)}}' +
-    '.row{display:flex;align-items:center;gap:8px}' +
-    '.meta{flex:0 0 auto;display:flex;flex-direction:column;gap:2px;min-width:0}' +
-    '.lab{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border:1px solid currentColor;border-radius:999px;opacity:.8}' +
-    '.ttl{font-size:11px;font-weight:700;opacity:.9;white-space:nowrap}' +
-    '.logos{display:flex;flex:1 1 auto;gap:8px;overflow-x:auto;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:none}' +
-    '.logos::-webkit-scrollbar{display:none}' +
-    'a.logo{flex:0 0 auto;display:flex;align-items:center;justify-content:center;text-decoration:none;color:inherit;border-radius:8px}' +
-    'a.logo img{display:block;height:32px;width:auto;max-width:110px;border-radius:8px}' +
-    'a.logo .txt{display:inline-block;font-size:12px;font-weight:700;padding:7px 10px;border:1px solid rgba(128,128,128,.45);border-radius:8px;background:rgba(128,128,128,.1)}' +
-    '.note{font-size:10.5px;opacity:.65;margin-top:6px;line-height:1.4}' +
-    '.x{flex:0 0 auto;border:0;background:transparent;color:inherit;font-size:18px;line-height:1;padding:4px 6px;margin-left:2px;opacity:.8;cursor:pointer}' +
+    '@media (max-width:767px){.footer{display:none}.sticky{display:block;position:fixed;left:0;right:0;z-index:9998;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:rgba(20,20,20,.94);color:#f4f4f4;box-shadow:0 -4px 18px rgba(0,0,0,.28);backdrop-filter:blur(8px)}}' +
+    '.head{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-width:0}' +
+    '.lab{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border:1px solid currentColor;border-radius:999px;opacity:.8;flex:0 0 auto}' +
+    '.ttl{font-size:13px;font-weight:800;letter-spacing:-.02em;line-height:1.3;min-width:0}' +
+    '.logos{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}' +
+    'a.logo{display:flex;align-items:center;gap:8px;min-width:0;padding:10px 10px 10px 12px;text-decoration:none;color:inherit;border-radius:12px;border:1px solid rgba(128,128,128,.28);background:rgba(128,128,128,.08);box-shadow:inset 3px 0 0 var(--accent,#888);transition:transform .15s,box-shadow .15s,background .15s,border-color .15s}' +
+    'a.logo:hover{background:rgba(128,128,128,.16);border-color:rgba(128,128,128,.5);transform:translateY(-1px);box-shadow:inset 3px 0 0 var(--accent,#888),0 4px 12px rgba(0,0,0,.08)}' +
+    'a.logo img{display:block;height:28px;width:auto;max-width:72px;border-radius:6px;flex:0 0 auto;background:#fff;padding:2px 4px}' +
+    'a.logo .txt{flex:0 0 auto;font-size:12px;font-weight:800}' +
+    '.copy{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}' +
+    '.name{font-size:12px;font-weight:800;line-height:1.2}' +
+    '.line{font-size:11.5px;opacity:.85;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' +
+    '.arrow{flex:0 0 auto;font-size:14px;font-weight:700;opacity:.55}' +
+    '.note{font-size:10.5px;opacity:.65;margin-top:8px;line-height:1.4}' +
+    '.x{flex:0 0 auto;margin-left:auto;border:0;background:transparent;color:inherit;font-size:18px;line-height:1;padding:4px 6px;opacity:.8;cursor:pointer}' +
     '.x:hover{opacity:1}' +
-    '@media (min-width:768px){.x{display:none}.ttl{white-space:normal}}';
+    '@media (max-width:767px){.head{margin-bottom:8px}.ttl{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto}.logos{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}a.logo{padding:8px 8px 8px 10px;border-radius:10px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14)}a.logo:hover{background:rgba(255,255,255,.14)}a.logo img{height:22px;max-width:56px}.name{font-size:11px}.line{font-size:10.5px;opacity:.9}}' +
+    '@media (min-width:768px){.x{display:none}}';
 
+  function barTitle(rec) {
+    if (rec && rec.title) return rec.title;
+    var mood = (rec && rec.mood) || (barCfg && barCfg.defaultMood) || 'shop';
+    var set = barCfg && barCfg.headlines && barCfg.headlines[mood];
+    return pickLine(set, (barCfg && barCfg.title) || '자주 쓰는 곳 바로가기');
+  }
   function logoHtml(item, rec) {
     var href = clickUrl(item, rec);
     var src = logoSrc(item);
-    var inner = src
-      ? '<img src="' + esc(src) + '" alt="' + esc(item.name || item.m) + '" width="120" height="36" />'
-      : '<span class="txt">' + esc(item.name || item.m) + '</span>';
-    return '<a class="logo" href="' + esc(href) + '" target="_blank" rel="sponsored noopener" data-id="' + esc(item.id || item.m) + '" aria-label="광고: ' + esc(item.name || item.m) + '">' + inner + '</a>';
+    var name = item.name || item.m;
+    var line = pickLine(item.lines, '');
+    var accent = item.accent || '#888888';
+    var badge = src
+      ? '<img src="' + esc(src) + '" alt="' + esc(name) + '" width="120" height="36" />'
+      : '<span class="txt">' + esc(name) + '</span>';
+    var lab = '광고: ' + name + (line ? ' — ' + line : '');
+    return '<a class="logo" href="' + esc(href) + '" target="_blank" rel="sponsored noopener" data-id="' + esc(item.id || item.m) + '" aria-label="' + esc(lab) + '" style="--accent:' + esc(accent) + '">' +
+      badge +
+      '<span class="copy"><span class="name">' + esc(name) + '</span>' +
+      (line ? '<span class="line">' + esc(line) + '</span>' : '') +
+      '</span><span class="arrow" aria-hidden="true">→</span></a>';
   }
   function bindBarClicks(root) {
     var links = root.querySelectorAll('a.logo');
@@ -282,26 +309,30 @@
     if (!root) return;
     el.style.display = '';
     var lab = (barCfg && barCfg.label) || '광고';
-    var title = (barCfg && barCfg.title) || '자주 쓰는 곳 바로가기';
+    var title = barTitle(rec);
     var note = (barCfg && barCfg.note) || NOTES.linkprice;
     var logos = items.map(function (it) { return logoHtml(it, rec); }).join('');
     var close = '<button type="button" class="x" aria-label="바로가기 닫기">×</button>';
     root.innerHTML = '<style>' + BAR_CSS + '</style>' +
       '<div class="footer">' +
-        '<div class="row"><div class="meta"><span class="lab">' + esc(lab) + '</span><span class="ttl">' + esc(title) + '</span></div><div class="logos">' + logos + '</div></div>' +
+        '<div class="head"><span class="lab">' + esc(lab) + '</span><span class="ttl">' + esc(title) + '</span></div>' +
+        '<div class="logos">' + logos + '</div>' +
         '<p class="note">' + esc(note) + '</p>' +
       '</div>' +
       '<div class="sticky">' +
-        '<div class="row"><div class="meta"><span class="lab">' + esc(lab) + '</span><span class="ttl">' + esc(title) + '</span></div><div class="logos">' + logos + '</div>' + close + '</div>' +
+        '<div class="head"><span class="lab">' + esc(lab) + '</span><span class="ttl">' + esc(title) + '</span>' + close + '</div>' +
+        '<div class="logos">' + logos + '</div>' +
       '</div>';
     bindBarClicks(root);
     applyStickyOffset(root);
     var imgs = root.querySelectorAll('a.logo img');
     for (var i = 0; i < imgs.length; i++) {
       imgs[i].addEventListener('error', function () {
-        var a = this.parentNode;
         var name = this.getAttribute('alt') || '';
-        if (a) a.innerHTML = '<span class="txt">' + esc(name) + '</span>';
+        var ph = document.createElement('span');
+        ph.className = 'txt';
+        ph.textContent = name;
+        if (this.parentNode) this.parentNode.replaceChild(ph, this);
         syncSpacer();
       });
       imgs[i].addEventListener('load', function () { syncSpacer(); });
