@@ -131,23 +131,38 @@
     if (!rec || !rec.code) return null;
     return rec;
   }
+  function merchantList(rec) {
+    var m = rec && rec.merchants;
+    if (!m) return [];
+    if (Object.prototype.toString.call(m) === '[object Array]') return m;
+    if (typeof m === 'object') return Object.keys(m);
+    return [];
+  }
+  function merchantHost(rec, item) {
+    var m = rec && rec.merchants;
+    var host = '';
+    if (m && Object.prototype.toString.call(m) !== '[object Array]' && m[item.m]) host = m[item.m];
+    if (!host) host = item.clickHost || (barCfg && barCfg.clickHost) || 'bestmore.net';
+    return host;
+  }
   function visibleBarItems() {
     var rec = siteRec();
     if (!rec || barExcluded()) return [];
-    var allowed = rec.merchants || [];
+    var allowed = merchantList(rec);
     if (!allowed.length) return [];
     return (barCfg.items || []).filter(function (it) {
       if (!it || it.active === false || !it.m) return false;
       return allowed.indexOf(it.m) >= 0 || allowed.indexOf(it.id) >= 0;
     });
   }
-  function clickUrl(item, code) {
-    var host = item.clickHost || (barCfg && barCfg.clickHost) || 'https://bestmore.net/click.php';
+  function clickUrl(item, rec) {
+    var host = merchantHost(rec, item);
     var baseUrl = String(host);
+    if (baseUrl.indexOf('://') < 0) baseUrl = 'https://' + baseUrl.replace(/^\/+/, '');
     if (baseUrl.indexOf('click.php') < 0) {
       baseUrl = baseUrl.replace(/\/?$/, '/') + 'click.php';
     }
-    return baseUrl + '?m=' + encodeURIComponent(item.m) + '&a=' + encodeURIComponent(code) + '&l=0000';
+    return baseUrl + '?m=' + encodeURIComponent(item.m) + '&a=' + encodeURIComponent(rec.code) + '&l=0000';
   }
   function logoSrc(item) {
     if (!item.logo) return '';
@@ -238,8 +253,8 @@
     '.x:hover{opacity:1}' +
     '@media (min-width:768px){.x{display:none}.ttl{white-space:normal}}';
 
-  function logoHtml(item, code) {
-    var href = clickUrl(item, code);
+  function logoHtml(item, rec) {
+    var href = clickUrl(item, rec);
     var src = logoSrc(item);
     var inner = src
       ? '<img src="' + esc(src) + '" alt="' + esc(item.name || item.m) + '" width="120" height="36" />'
@@ -269,7 +284,7 @@
     var lab = (barCfg && barCfg.label) || '광고';
     var title = (barCfg && barCfg.title) || '자주 쓰는 곳 바로가기';
     var note = (barCfg && barCfg.note) || NOTES.linkprice;
-    var logos = items.map(function (it) { return logoHtml(it, rec.code); }).join('');
+    var logos = items.map(function (it) { return logoHtml(it, rec); }).join('');
     var close = '<button type="button" class="x" aria-label="바로가기 닫기">×</button>';
     root.innerHTML = '<style>' + BAR_CSS + '</style>' +
       '<div class="footer">' +
