@@ -1,8 +1,30 @@
 {
   "headers": [
-    {"source": "/(ads.json|ads.js)", "headers": [
-      {"key": "Cache-Control", "value": "public, max-age=300, s-maxage=300"},
-      {"key": "Access-Control-Allow-Origin", "value": "*"}
-    ]}
+    {
+      "source": "/(ads.json|ads.js)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, s-maxage=300"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/logos/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, s-maxage=86400"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
   ]
 }
