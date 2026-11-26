@@ -7,7 +7,10 @@
    type별 고지 문구가 자동으로 붙는다(note가 있으면 note 우선). 묶음(cpa/apple/coupang/linkprice)을 고르게 돌린다.
    sites가 있는 항목은 location.hostname이 그 목록과 일치할 때만 노출된다.
    하단 바로가기: <div class="nadoo-ad-bar"></div>. 코드 맵은 ads.json 의 bar.sites.
-   사이트 코드나 merchants가 없으면 로고는 숨긴다. 나두게임즈(robingames)는 노출하지 않는다. */
+   사이트 코드나 merchants가 없으면 로고는 숨긴다. 나두게임즈(robingames)는 노출하지 않는다.
+   모바일 하단 고정 띠는 사이트당 하나(60px 이하 한 줄): 바로가기 줄이 뜨는 사이트는 [data-coupang-sticky]를 숨기고,
+   둘 다 약 1화면 스크롤한 뒤에 나타난다. 지정 묶음이 비면 쿠팡으로 채우고, 그래도 없으면 칸을 숨긴다.
+   사이트에 직접 박힌 쿠팡 링크 클릭은 click-site-coupang-<사이트>-inline|sticky 로 센다. */
 (function () {
   if (window.__nadooAds) return; window.__nadooAds = true;
   var me = document.currentScript;
@@ -78,6 +81,11 @@
     for (var i = 0; i < c.length; i++) { r -= (+c[i].weight > 0 ? +c[i].weight : 1); if (r <= 0) return c[i]; }
     return c[c.length - 1];
   }
+  function fallbackCoupang() {
+    if (!pool) return null;
+    for (var i = 0; i < pool.length; i++) if (typeOf(pool[i]) === 'coupang') return pool[i];
+    return null;
+  }
   function esc(s) { return String(s || '').replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); }
   function pickLine(arr, fallback) {
     if (Array.isArray(arr) && arr.length) return arr[Math.floor(Math.random() * arr.length)];
@@ -119,7 +127,10 @@
     var ex = (el.getAttribute('data-exclude') || '').split(',').map(function (s) { return s.trim(); });
     var ty = (el.getAttribute('data-types') || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
     var a = pick(ex, ty);
-    if (!a) return;
+    // 빈 칸 방지: 지정 묶음이 다 쓰였으면 쿠팡으로 채우고, 그래도 없으면 칸을 숨긴다.
+    if (!a && ex.indexOf('coupang') < 0) a = pick(ex, ['coupang']) || fallbackCoupang();
+    if (!a) { el.style.display = 'none'; return; }
+    el.style.display = '';
     used[a.id] = 1;
     render(el, a);
   }
@@ -207,6 +218,46 @@
     }
     return n;
   }
+  var innerY = 0;
+  function scrolledEnough() {
+    try {
+      var lim = (window.innerHeight || 800) * 0.9;
+      return (window.scrollY || window.pageYOffset || 0) > lim || innerY > lim;
+    } catch (e) { return true; }
+  }
+  function barActive() {
+    return !!barCfg && !barExcluded() && visibleBarItems().length > 0;
+  }
+  // 모바일 하단 고정 띠는 사이트당 하나: 바로가기 줄이 있는 사이트는 쿠팡 띠를 숨기고,
+  // 없는 사이트는 쿠팡 띠를 약 1화면 스크롤 뒤에 보여 준다.
+  function syncStickies() {
+    var mob = isMobile();
+    var hideCp = mob && barActive();
+    var gate = mob && !scrolledEnough();
+    var nodes = document.querySelectorAll('[data-coupang-sticky]');
+    for (var i = 0; i < nodes.length; i++) {
+      if (hideCp || gate) nodes[i].style.setProperty('display', 'none', 'important');
+      else nodes[i].style.removeProperty('display');
+    }
+    var els = document.querySelectorAll('.nadoo-ad-bar');
+    for (var j = 0; j < els.length; j++) {
+      var r = els[j].shadowRoot; var s = r && r.querySelector('.sticky');
+      if (s) s.classList.toggle('on', scrolledEnough() && !isDismissed());
+    }
+    syncSpacer();
+  }
+  function hostSlug() {
+    return currentHost().replace(/\.vercel\.app$/, '').replace(/[^a-z0-9-]+/g, '-').slice(0, 40) || 'site';
+  }
+  // 사이트에 직접 박힌 쿠팡 배너도 클릭을 센다(광고 박스 안 링크는 render에서 따로 센다).
+  function trackSiteCoupang(ev) {
+    if (ev.type === 'auxclick' && ev.button !== 1) return;
+    var t = ev.target;
+    var a = t && t.closest ? t.closest('a[href*="coupang.com"]') : null;
+    if (!a) return;
+    var where = a.closest('[data-coupang-sticky]') ? 'sticky' : 'inline';
+    try { fetch(ABACUS + 'click-site-coupang-' + hostSlug() + '-' + where, { mode: 'no-cors', keepalive: true }); } catch (e) {}
+  }
   function isMobile() {
     try { return window.matchMedia && window.matchMedia('(max-width: 767px)').matches; } catch (e) { return false; }
   }
@@ -235,7 +286,7 @@
       if (s) { sticky = s; break; }
     }
     if (!sticky) { clearSpacer(); return; }
-    var h = Math.round(sticky.getBoundingClientRect().height);
+    var h = sticky.classList.contains('on') ? Math.round(sticky.getBoundingClientRect().height) : 0;
     if (h <= 0) { clearSpacer(); return; }
     var sp = spacerEl();
     if (!sp) return;
@@ -247,7 +298,17 @@
     '.footer{display:none;margin:16px 0 8px;padding:14px 16px 12px;border:1px solid rgba(128,128,128,.25);background:rgba(128,128,128,.06);border-radius:16px}' +
     '.sticky{display:none}' +
     '@media (min-width:768px){.footer{display:block}.sticky{display:none !important}}' +
-    '@media (max-width:767px){.footer{display:none}.sticky{display:block;position:fixed;left:0;right:0;z-index:9998;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:rgba(20,20,20,.94);color:#f4f4f4;box-shadow:0 -4px 18px rgba(0,0,0,.28);backdrop-filter:blur(8px)}}' +
+    '@media (max-width:767px){.footer{display:none}.sticky{display:none;position:fixed;left:0;right:0;bottom:0;z-index:9998;box-sizing:border-box;max-height:calc(60px + env(safe-area-inset-bottom,0px));padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px)) 8px;background:rgba(20,20,20,.94);color:#f4f4f4;box-shadow:0 -4px 18px rgba(0,0,0,.28);backdrop-filter:blur(8px);overflow:hidden}.sticky.on{display:flex;align-items:center;gap:6px}}' +
+    '.row{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}' +
+    '.row::-webkit-scrollbar{display:none}' +
+    '.sticky .lab{color:#f4f4f4}' +
+    '.hl{flex:0 0 auto;max-width:118px;font-size:11px;font-weight:800;line-height:1.25;letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal}' +
+    '.sticky a.logo{flex:0 0 auto;max-width:200px;height:44px;box-sizing:border-box;padding:4px 8px 4px 9px;gap:6px;border-radius:10px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16)}' +
+    '.sticky a.logo img{height:20px;max-width:48px}' +
+    '.sticky .name{font-size:11px}' +
+    '.sticky .line{font-size:10.5px;-webkit-line-clamp:1;white-space:nowrap;text-overflow:ellipsis;display:block;max-width:132px}' +
+    '.sticky .arrow{display:none}' +
+    '.sticky .x{margin-left:0;padding:4px 6px}' +
     '.head{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-width:0}' +
     '.lab{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border:1px solid currentColor;border-radius:999px;opacity:.8;flex:0 0 auto}' +
     '.ttl{font-size:13px;font-weight:800;letter-spacing:-.02em;line-height:1.3;min-width:0}' +
@@ -263,7 +324,7 @@
     '.note{font-size:10.5px;opacity:.65;margin-top:8px;line-height:1.4}' +
     '.x{flex:0 0 auto;margin-left:auto;border:0;background:transparent;color:inherit;font-size:18px;line-height:1;padding:4px 6px;opacity:.8;cursor:pointer}' +
     '.x:hover{opacity:1}' +
-    '@media (max-width:767px){.head{margin-bottom:8px}.ttl{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto}.logos{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}a.logo{padding:8px 8px 8px 10px;border-radius:10px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14)}a.logo:hover{background:rgba(255,255,255,.14)}a.logo img{height:22px;max-width:56px}.name{font-size:11px}.line{font-size:10.5px;opacity:.9}}' +
+    
     '@media (min-width:768px){.x{display:none}}';
 
   function barTitle(rec) {
@@ -302,7 +363,8 @@
   function applyStickyOffset(root) {
     var sticky = root.querySelector('.sticky');
     if (!sticky) return;
-    sticky.style.bottom = otherBottomH() + 'px';
+    sticky.style.bottom = '0px';
+    sticky.classList.toggle('on', scrolledEnough());
   }
   function renderBar(el, items, rec) {
     var root = el.shadowRoot || (el.attachShadow ? el.attachShadow({ mode: 'open' }) : null);
@@ -319,9 +381,9 @@
         '<div class="logos">' + logos + '</div>' +
         '<p class="note">' + esc(note) + '</p>' +
       '</div>' +
-      '<div class="sticky">' +
-        '<div class="head"><span class="lab">' + esc(lab) + '</span><span class="ttl">' + esc(title) + '</span>' + close + '</div>' +
-        '<div class="logos">' + logos + '</div>' +
+      '<div class="sticky" role="complementary" aria-label="' + esc(lab + ': ' + title) + '">' +
+        '<span class="lab">' + esc(lab) + '</span>' +
+        '<div class="row"><span class="hl">' + esc(title) + '</span>' + logos + '</div>' + close +
       '</div>';
     bindBarClicks(root);
     applyStickyOffset(root);
@@ -371,6 +433,22 @@
   function start() {
     scan();
     scanBar();
+    syncStickies();
+    document.addEventListener('click', trackSiteCoupang, true);
+    document.addEventListener('auxclick', trackSiteCoupang, true);
+    var st = false;
+    // 문서 자체가 스크롤되지 않는 화면(지도형 앱 등)은 잠시 머문 뒤 보여 준다.
+    setTimeout(function () {
+      var de = document.documentElement;
+      if (de && de.scrollHeight <= (window.innerHeight || 800) + 60) { innerY = 1e9; syncStickies(); }
+    }, 6000);
+    // 본문이 내부 스크롤 영역인 사이트(지도형 등)도 스크롤 양을 잡는다.
+    document.addEventListener('scroll', function (ev) {
+      var t = ev.target;
+      if (t && t.nodeType === 1 && t.scrollTop > innerY) innerY = t.scrollTop;
+      if (st) return; st = true;
+      setTimeout(function () { st = false; syncStickies(); }, 120);
+    }, { passive: true, capture: true });
     if (window.MutationObserver) {
       var t = null;
       new MutationObserver(function () { clearTimeout(t); t = setTimeout(function () {
@@ -379,6 +457,7 @@
         pool && pool.forEach(function (a) { if (used[a.id] && !live[a.url]) delete used[a.id]; });
         scan();
         scanBar();
+        syncStickies();
       }, 150); }).observe(document.documentElement, { childList: true, subtree: true });
     }
     if (window.addEventListener) {
@@ -387,7 +466,7 @@
         for (var i = 0; i < els.length; i++) {
           var r = els[i].shadowRoot; if (r) applyStickyOffset(r);
         }
-        syncSpacer();
+        syncStickies();
       });
       window.addEventListener('orientationchange', syncSpacer);
     }
