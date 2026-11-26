@@ -10,7 +10,10 @@
    사이트 코드나 merchants가 없으면 로고는 숨긴다. 나두게임즈(robingames)는 노출하지 않는다.
    모바일 하단 고정 띠는 사이트당 하나(60px 이하 한 줄): 바로가기 줄이 뜨는 사이트는 [data-coupang-sticky]를 숨기고,
    둘 다 약 1화면 스크롤한 뒤에 나타난다. 지정 묶음이 비면 쿠팡으로 채우고, 그래도 없으면 칸을 숨긴다.
-   사이트에 직접 박힌 쿠팡 링크 클릭은 click-site-coupang-<사이트>-inline|sticky 로 센다. */
+   사이트에 직접 박힌 쿠팡 링크 클릭은 click-site-coupang-<사이트>-inline|sticky 로 센다.
+   자동 배치: ads.json 의 auto.hosts[호스트] = { ctx, rot, every, cap, anchor, end, skipPaths }.
+   첫 화면 끝에 ctx 광고 1개, 긴 목록은 every개마다(rot 순환), 본문 광고 합계 cap(긴 목록 4, 그 외 3) 이하,
+   광고끼리 90px 안으로 붙지 않게 하고, 넘치면 아래쪽 칸부터 숨긴다. */
 (function () {
   if (window.__nadooAds) return; window.__nadooAds = true;
   var me = document.currentScript;
@@ -102,8 +105,9 @@
     '.n{font-size:11.5px;opacity:.6;margin-top:6px}' +
     '.b{flex:0 0 auto;font-size:13.5px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid currentColor;white-space:nowrap}';
   function render(el, a) {
-    var root = el.shadowRoot || (el.attachShadow ? el.attachShadow({ mode: 'open' }) : null);
-    if (!root) return;
+    var root = null;
+    try { root = el.shadowRoot || (el.attachShadow ? el.attachShadow({ mode: 'open' }) : null); } catch (e) { root = null; }
+    if (!root) { el.style.display = 'none'; return; }
     var lab = a.label || (a.internal ? '추천' : '광고');
     var note = a.note || NOTES[typeOf(a)] || '';
     var rel = a.internal ? 'noopener' : 'sponsored noopener';
@@ -430,10 +434,289 @@
     syncSpacer();
   }
 
+
+  /* ---------- 자동 배치: ads.json 의 auto.hosts[호스트] 설정이 있는 사이트만 ----------
+     mid: 첫 화면 끝(또는 본문 1/3) 블록 경계에 문맥 광고 1개.
+     feed: 긴 목록은 항목 N개마다 1개(문맥→쿠팡→네이버 순환), 본문 광고 합계 cap 이하.
+     collapse: 붙어 있는 광고 칸은 1개만 남긴다. end: 글 끝 40% 안에 광고가 없으면 1개. */
+  var autoAll = null;
+  var autoPath = null;
+  var autoTimer = null;
+  var autoPlaced = 0;
+  var autoRuns = 0;
+  function autoCfg() {
+    if (!autoAll || !autoAll.hosts) return null;
+    var c = autoAll.hosts[currentHost()];
+    if (!c) return null;
+    var path = location.pathname || '/';
+    var sk = c.skipPaths || [];
+    for (var i = 0; i < sk.length; i++) { try { if (new RegExp(sk[i]).test(path)) return null; } catch (e) {} }
+    return c;
+  }
+  function absTop(el) { var r = el.getBoundingClientRect(); return r.top + (window.scrollY || 0); }
+  function absBottom(el) { var r = el.getBoundingClientRect(); return r.bottom + (window.scrollY || 0); }
+  function shown(el) { return el && el.nodeType === 1 && el.getClientRects().length > 0 && el.getBoundingClientRect().height > 0; }
+  function inChrome(el) { return !!(el.closest && el.closest('header,nav,footer,[role=navigation],[data-coupang-sticky],.nadoo-ad-bar,dialog')); }
+  function isAdish(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (el.matches && el.matches('.nadoo-ad,[data-nadoo-auto-slot]')) return true;
+    var h = el.getBoundingClientRect().height;
+    if (h > 0 && h < 380 && el.querySelector && el.querySelector('.nadoo-ad,a[href*="link.coupang.com"],a[rel~="sponsored"]')) return true;
+    return false;
+  }
+  function slotGroup(el) {
+    var a = el.shadowRoot && el.shadowRoot.querySelector('a');
+    if (!a) return null;
+    var href = a.getAttribute('href');
+    for (var i = 0; i < (pool || []).length; i++) if (pool[i].url === href) return groupOf(pool[i]);
+    return null;
+  }
+  function staticSlots() {
+    var out = []; var els = document.querySelectorAll('.nadoo-ad:not([data-nadoo-auto-slot])');
+    for (var i = 0; i < els.length; i++) if (shown(els[i]) && els[i].shadowRoot && els[i].shadowRoot.querySelector('a')) out.push(els[i]);
+    return out;
+  }
+  function releaseSlot(el) {
+    var a = el.shadowRoot && el.shadowRoot.querySelector('a');
+    if (a) { var href = a.getAttribute('href'); (pool || []).forEach(function (x) { if (x.url === href) delete used[x.id]; }); }
+    if (el.shadowRoot) el.shadowRoot.innerHTML = '';
+    el.style.display = 'none';
+    el.setAttribute('data-nadoo-moved', '1');
+  }
+  function contentRoot() { return document.querySelector('main') || document.querySelector('[role=main]') || document.body; }
+  function kidsOf(node) {
+    var out = [];
+    for (var i = 0; i < node.children.length; i++) {
+      var k = node.children[i];
+      if (/^(SCRIPT|STYLE|TEMPLATE|LINK|NOSCRIPT)$/.test(k.tagName) || !shown(k)) continue;
+      out.push(k);
+    }
+    return out;
+  }
+  function keyOf(el) { return el.tagName + '.' + String(el.getAttribute('class') || '').split(/\s+/)[0]; }
+  function findLists(root) {
+    var all = root.querySelectorAll('*'); var cands = [];
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (el.children.length < 6 || inChrome(el) || el.closest('.nadoo-ad,[data-nadoo-auto-slot]')) continue;
+      if (/^(TBODY|TABLE|THEAD|TR|SELECT|SVG|svg|P)$/.test(el.tagName)) continue;
+      var kids = kidsOf(el); if (kids.length < 6) continue;
+      var cnt = {}, best = 0, bk = '';
+      kids.forEach(function (k) { if (k.hasAttribute('data-nadoo-auto-slot')) return; var kk = keyOf(k); cnt[kk] = (cnt[kk] || 0) + 1; if (cnt[kk] > best) { best = cnt[kk]; bk = kk; } });
+      if (best < 6 || best < kids.length * 0.8) continue;
+      var tot = 0; kids.forEach(function (k) { tot += k.getBoundingClientRect().height; });
+      if (tot / kids.length < 44) continue;
+      cands.push(el);
+    }
+    return cands.filter(function (c) { return !cands.some(function (o) { return o !== c && c.contains(o); }); });
+  }
+  function makeSlot(types, parent) {
+    var el = document.createElement('div');
+    el.className = 'nadoo-ad';
+    el.setAttribute('data-nadoo-auto-slot', '1');
+    if (types) el.setAttribute('data-types', types);
+    var cs = getComputedStyle(parent);
+    var css = 'list-style:none;width:100%;max-width:100%;box-sizing:border-box;' +
+      (cs.display.indexOf('grid') >= 0 ? 'grid-column:1/-1;' : '') + (cs.display.indexOf('flex') >= 0 ? 'flex:0 0 100%;' : '');
+    if (/^(UL|OL)$/.test(parent.tagName)) {
+      // li 는 shadow root 를 못 붙이므로 li 안에 칸을 둔다.
+      var li = document.createElement('li');
+      li.setAttribute('data-nadoo-auto-slot', '1');
+      li.setAttribute('aria-label', '광고');
+      li.style.cssText = css;
+      li.appendChild(el);
+      return li;
+    }
+    el.style.cssText = css;
+    return el;
+  }
+  function safeAfter(ref) {
+    // 광고끼리 붙지 않게: 앞뒤가 광고면 한 칸 뒤로 민다.
+    var guard = 0;
+    while (ref && guard++ < 4 && (isAdish(ref) || isAdish(ref.nextElementSibling))) ref = ref.nextElementSibling;
+    return ref;
+  }
+  function insertAfter(ref, el) { if (ref && ref.parentNode) ref.parentNode.insertBefore(el, ref.nextSibling); }
+  function clearAuto() {
+    var olds = document.querySelectorAll('[data-nadoo-auto-slot]');
+    for (var i = 0; i < olds.length; i++) if (olds[i].parentNode) olds[i].parentNode.removeChild(olds[i]);
+  }
+  function collapseStatic() {
+    var sl = staticSlots().sort(function (a, b) { return absTop(a) - absTop(b); });
+    for (var i = 1; i < sl.length; i++) {
+      var prev = sl[i - 1];
+      if (prev.style.display === 'none') continue;
+      if (absTop(sl[i]) - absBottom(prev) < 90) releaseSlot(sl[i]);
+    }
+  }
+  // 본문 안 광고 덩어리(광고 박스, 사이트에 박힌 쿠팡·제휴 카드)의 위치. 머리·바닥글·고정 띠는 뺀다.
+  function adBoxes(root, skip) {
+    var out = [];
+    var els = root.querySelectorAll('.nadoo-ad,[data-nadoo-auto-slot]');
+    for (var i = 0; i < els.length; i++) {
+      var e = els[i];
+      if (e === skip || (skip && (skip.contains(e) || e.contains(skip)))) continue;
+      if (e.tagName === 'LI' && e.querySelector('.nadoo-ad')) continue;
+      if (!e.hasAttribute('data-nadoo-auto-slot') && !(shown(e) && e.shadowRoot && e.shadowRoot.querySelector('a'))) continue;
+      if (e.style.display === 'none' || inChrome(e)) continue;
+      out.push({ el: e, top: absTop(e), bottom: absBottom(e), auto: e.hasAttribute('data-nadoo-auto-slot') });
+    }
+    var links = root.querySelectorAll('a[href*="link.coupang.com"],a[rel~="sponsored"]');
+    for (var k = 0; k < links.length; k++) {
+      var a = links[k];
+      if (!shown(a) || inChrome(a) || a.closest('.nadoo-ad')) continue;
+      var box = a, p = a.parentElement, g = 0;
+      while (p && p !== root && g++ < 4) { var h = p.getBoundingClientRect().height; if (h > 420) break; box = p; p = p.parentElement; }
+      var t = absTop(box), b = absBottom(box);
+      var dup = out.some(function (o) { return !o.auto && o.el.nodeType === 1 && Math.abs(o.top - t) < 160 && o.site; });
+      if (dup) continue;
+      out.push({ el: box, top: t, bottom: b, site: true });
+    }
+    return out.sort(function (x, y) { return x.top - y.top; });
+  }
+  function nearAd(root, slot) {
+    var t = absTop(slot);
+    return adBoxes(root, slot).some(function (o) {
+      return (o.bottom <= t + 1 && t - o.bottom < 90) || (o.top >= t - 1 && o.top - t < 90) || (o.top < t && o.bottom > t);
+    });
+  }
+  // 문서 순서대로 "이 요소 뒤에 넣을 수 있는" 경계 후보. 큰 덩어리(1.4화면 초과)는 안으로 들어간다.
+  function boundaries(node, VH, out, depth) {
+    var kids = kidsOf(node);
+    for (var i = 0; i < kids.length; i++) {
+      var k = kids[i];
+      if (inChrome(k) || isAdish(k)) { out.push(null); continue; }
+      if (k.getBoundingClientRect().height > VH * 1.4 && depth < 6 && kidsOf(k).length) boundaries(k, VH, out, depth + 1);
+      out.push(k);
+    }
+    return out;
+  }
+  function placeNear(root, T, maxY, types, VH, anchor) {
+    var cand = anchor ? [anchor] : boundaries(root, VH, [], 0);
+    var tries = 0;
+    for (var i = 0; i < cand.length && tries < 10; i++) {
+      var ref = cand[i];
+      if (!ref || !ref.parentNode) continue;
+      var b = absBottom(ref);
+      if (!anchor && b < T) continue;
+      if (b > maxY) break;
+      tries++;
+      var sl = makeSlot(types, ref.parentNode);
+      insertAfter(ref, sl);
+      if (!nearAd(root, sl)) return sl;
+      sl.parentNode.removeChild(sl);
+    }
+    return null;
+  }
+  function autoPlace() {
+    var cfg = autoCfg();
+    if (!cfg || !pool) return;
+    var root = contentRoot(); if (!root) return;
+    var VH = window.innerHeight || 800;
+    var ctx = cfg.ctx || '';
+    var ctxList = ctx ? ctx.split(',') : [];
+    var every = +cfg.every || +autoAll.every || 10;
+    clearAuto();
+    collapseStatic();
+    // 사이트에 박힌 쿠팡·제휴 카드와 붙은 광고 칸은 숨긴다(광고끼리 붙이지 않기).
+    staticSlots().forEach(function (sl) {
+      var t = absTop(sl), bt = absBottom(sl);
+      var touch = adBoxes(root, sl).some(function (o) { return o.site && ((o.bottom <= t + 1 && t - o.bottom < 90) || (o.top >= bt - 1 && o.top - bt < 90)); });
+      if (touch) releaseSlot(sl);
+    });
+    var H = Math.max(document.documentElement.scrollHeight, root.scrollHeight);
+    var lists = cfg.feed === false ? [] : findLists(root);
+    var listItems = 0, listH = 0, lastBottom = 0;
+    lists.forEach(function (l) { listItems += kidsOf(l).length; listH += l.getBoundingClientRect().height; lastBottom = Math.max(lastBottom, absBottom(l)); });
+    var longList = listItems >= 16 && listH > VH * 3;
+    var cap = +cfg.cap || (longList ? 4 : 3);
+    var placed = 0;
+    // 긴 목록: 끝까지 내려가는 사람이 드무니 목록 아래쪽 정적 칸은 위로 옮긴다(숨김).
+    if (longList) {
+      var cut = Math.max(lastBottom - 10, H * 0.7);
+      staticSlots().forEach(function (s) { if (absTop(s) > cut) releaseSlot(s); });
+    }
+    // mid: 첫 화면 끝(또는 본문 1/3)
+    var T = Math.max(260, Math.min(VH * 0.85, H * 0.34));
+    var haveTop = staticSlots().some(function (s) { return absTop(s) < VH * 1.5 && (!ctxList.length || ctxList.indexOf(slotGroup(s)) >= 0); });
+    var mid = null;
+    if (!haveTop) {
+      if (ctxList.length) {
+        var free = pool.some(function (a) { return !used[a.id] && (ctxList.indexOf(groupOf(a)) >= 0 || ctxList.indexOf(typeOf(a)) >= 0); });
+        if (!free) {
+          var low = staticSlots().filter(function (s) { return ctxList.indexOf(slotGroup(s)) >= 0; });
+          if (low.length) releaseSlot(low[low.length - 1]);
+        }
+      }
+      var anchor = cfg.anchor ? document.querySelector(cfg.anchor) : null;
+      mid = placeNear(root, T, T + VH * 2.5, ctx, VH, anchor && shown(anchor) ? anchor : null);
+      if (mid) placed++;
+      else if (ctxList.length) {
+        // 붙지 않는 새 자리가 없으면 위쪽(3화면 안) 기존 칸을 문맥 광고로 바꾼다.
+        var up = staticSlots().filter(function (s) { return absTop(s) < VH * 3; })[0];
+        if (up) {
+          var ua = up.shadowRoot && up.shadowRoot.querySelector('a');
+          if (ua) { var uh = ua.getAttribute('href'); pool.forEach(function (x) { if (x.url === uh) delete used[x.id]; }); }
+          up.shadowRoot.innerHTML = '';
+          up.setAttribute('data-types', ctx);
+          if (filled && filled.delete) filled.delete(up); else up.__nadooAd = 0;
+          fill(up);
+        }
+      }
+    }
+    // feed: 긴 목록은 N개마다(문맥→쿠팡→네이버)
+    if (longList) {
+      var rot = (cfg.rot && cfg.rot.length) ? cfg.rot : [ 'coupang', 'apple', ctx || 'cpa' ];
+      var n = 0, k = 0;
+      for (var li = 0; li < lists.length; li++) {
+        var items = kidsOf(lists[li]);
+        for (var j = 0; j < items.length; j++) {
+          if (items[j].hasAttribute('data-nadoo-auto-slot')) continue;
+          n++;
+          if (n % every !== 0 || j === items.length - 1) continue;
+          if (adBoxes(root).length >= cap) break;
+          var sl = makeSlot(rot[k % rot.length], lists[li]);
+          insertAfter(items[j], sl);
+          if (nearAd(root, sl)) { sl.parentNode.removeChild(sl); n--; continue; }
+          k++; placed++;
+        }
+      }
+    }
+    // 합계 제한: 넘치면 아래쪽 정적 칸부터 숨긴다(위로 옮긴 셈).
+    var guard = 0;
+    while (guard++ < 10) {
+      var boxes = adBoxes(root);
+      if (boxes.length <= cap) break;
+      var victim = null;
+      for (var b = boxes.length - 1; b >= 0; b--) { var e = boxes[b].el; if (!boxes[b].site && !boxes[b].auto && e.classList && e.classList.contains('nadoo-ad')) { victim = e; break; } }
+      if (victim) { releaseSlot(victim); continue; }
+      for (var c = boxes.length - 1; c >= 0; c--) { if (boxes[c].auto && boxes[c].el !== mid) { victim = boxes[c].el; break; } }
+      if (victim && victim.parentNode) { victim.parentNode.removeChild(victim); placed--; continue; }
+      break;
+    }
+    // end: 글 끝 40% 안에 광고가 하나도 없으면 1개
+    if (cfg.end) {
+      var H2 = document.documentElement.scrollHeight;
+      var anyLow = adBoxes(root).some(function (o) { return o.top > H2 * 0.6; });
+      if (!anyLow && adBoxes(root).length < cap) {
+        var last = kidsOf(root); var lastEl = last[last.length - 1];
+        if (lastEl && !isAdish(lastEl)) { var e2 = makeSlot('', root); root.appendChild(e2); if (nearAd(root, e2)) root.removeChild(e2); else placed++; }
+      }
+    }
+    autoPlaced = placed;
+    if (placed) scan();
+  }
+  function scheduleAuto(delay) {
+    clearTimeout(autoTimer);
+    autoTimer = setTimeout(function () { autoPath = location.pathname + location.search; try { autoPlace(); } catch (e) {} }, delay);
+  }
   function start() {
     scan();
     scanBar();
     syncStickies();
+    // 하이드레이션이 끝난 뒤에 자동 배치(React 화면과 충돌하지 않게).
+    if (document.readyState === 'complete') scheduleAuto(900);
+    else window.addEventListener('load', function () { scheduleAuto(900); });
     document.addEventListener('click', trackSiteCoupang, true);
     document.addEventListener('auxclick', trackSiteCoupang, true);
     var st = false;
@@ -458,6 +741,10 @@
         scan();
         scanBar();
         syncStickies();
+        var cur = location.pathname + location.search;
+        if (autoPath !== null && cur !== autoPath) { autoPath = cur; autoRuns = 0; clearAuto(); scheduleAuto(900); }
+        // 목록을 다시 그리는 화면(필터·정렬)에서 자동 칸이 지워졌으면 다시 넣는다(같은 주소에서 최대 6번).
+        else if (autoPath !== null && autoPlaced && autoRuns < 6 && !document.querySelector('[data-nadoo-auto-slot]')) { autoRuns++; scheduleAuto(600); }
       }, 150); }).observe(document.documentElement, { childList: true, subtree: true });
     }
     if (window.addEventListener) {
@@ -474,6 +761,7 @@
   fetch(base + 'ads.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (j) {
     pool = (j.ads || []).filter(eligible);
     barCfg = j.bar || null;
+    autoAll = j.auto || null;
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
   }).catch(function () {});
 })();

@@ -84,5 +84,6 @@
       "tinalinkeom.vercel.app": {"code": "A100710514", "merchants": {"lenovo": "newtip.net", "gmarket": "linkmoa.kr"}, "mood": "shop"},
       "ai-tools-site-liart-one.vercel.app": {"code": "A100710586", "merchants": {"gmarket": "linkmoa.kr"}, "mood": "shop"}
     }
-  }
+  },
+  "auto": {"every": 10, "note": "첫 화면 끝 문맥 광고 1개 + 긴 목록 10개마다(합계 4 이하) + 붙은 칸 정리. 아브아르·나두게임즈는 넣지 않는다.", "hosts": {"movie-checklist-sigma.vercel.app": {"ctx": "vpnpromo", "rot": ["linkprice", "coupang", "apple"]}, "bond-archive-two.vercel.app": {"ctx": "vpnpromo"}, "mi-archive.vercel.app": {"ctx": "vpnpromo"}, "ff-archive.vercel.app": {"ctx": "vpnpromo"}, "transformers-archive.vercel.app": {"ctx": "vpnpromo"}, "fordvferrari-archive.vercel.app": {"ctx": "vpnpromo"}, "rush-archive.vercel.app": {"ctx": "vpnpromo"}, "granturismo-archive.vercel.app": {"ctx": "vpnpromo"}, "tarzan-archive.vercel.app": {"ctx": "vpnpromo"}, "johnwick-archive.vercel.app": {"ctx": "vpnpromo"}, "gun-archive.vercel.app": {"ctx": "vpnpromo"}, "nadoo-onepiece.vercel.app": {"ctx": "vpnpromo"}, "nadoo-musical.vercel.app": {"ctx": "vpnpromo"}, "the-chosen-korean.vercel.app": {"ctx": "vpnpromo"}, "british-motors.vercel.app": {"ctx": "lodge"}, "nadoo-world.vercel.app": {"ctx": "lodge"}, "nadoo-myth.vercel.app": {"ctx": "lodge"}, "ai-tools-site-liart-one.vercel.app": {"ctx": "linkprice"}, "nadoo-timeline.vercel.app": {"ctx": ""}, "nadoo-carousel.vercel.app": {"ctx": ""}, "tinalinkeom.vercel.app": {"ctx": "", "end": true, "skipPaths": ["^/(denzel|keanu|novel|swjs)"]}}}
 }
